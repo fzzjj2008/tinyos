@@ -3,16 +3,14 @@ BINDIR  := bin
 BOOTDIR := boot
 TINYIMG := $(BINDIR)/os.img
 
-VNC_PORT := 5901
-
 all:
 	mkdir -p $(BINDIR)
-	nasm -o $(BINDIR)/mbr.bin $(BOOTDIR)/mbr.S
+	nasm -o $(BINDIR)/mbr.bin $(BOOTDIR)/mbr.S -g
 	qemu-img create $(TINYIMG) 1M
-	dd if=mbr.bin of=$(TINYIMG) bs=512 count=1 conv=notrunc
+	dd if=$(BINDIR)/mbr.bin of=$(TINYIMG) bs=512 count=1 conv=notrunc
 qemu:
-	qemu-system-x86_64 -enable-kvm -monitor stdio $(TINYIMG)
-qemu-vnc:
-	qemu-system-x86_64 -enable-kvm -monitor stdio $(TINYIMG) -vnc :$(VNC_PORT)	
+	qemu-system-x86_64 -hda $(TINYIMG) -enable-kvm -monitor stdio -vnc :0
+gdb:
+	qemu-system-x86_64 -S -s -hda $(TINYIMG) -enable-kvm -monitor stdio -vnc :0
 clean:
 	rm -rf $(BINDIR)
