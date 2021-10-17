@@ -1,4 +1,6 @@
 SECTION MBR vstart=0x7c00
+global main
+main:
     mov ax, cs
     mov ds, ax
     mov es, ax
