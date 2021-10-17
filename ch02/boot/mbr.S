@@ -1,10 +1,10 @@
 SECTION MBR vstart=0x7c00
     mov ax, cs
-    mov ds,ax
-    mov es,ax
-    mov ss,ax
-    mov fs,ax
-    mov sp,0x7c00
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov sp, 0x7c00
 
 ; 屏幕初始化，清屏
     mov ax, 0x600
@@ -31,4 +31,4 @@ SECTION MBR vstart=0x7c00
 
     message db "Hello, Tiny OS"
     times 510-($-$$) db 0
-    db 0x55,0xaa
+    db 0x55, 0xaa
