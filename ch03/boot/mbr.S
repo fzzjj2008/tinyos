@@ -23,7 +23,7 @@ main:
 
 ; 输出绿底红色跳动字符串
 ; 0xb800: 'H' 0xA4 'e' 0xA4 'l' 0xA4 ...
-    call display2
+    call display1
     jmp $
 
 display:
@@ -36,6 +36,8 @@ display:
     ret
 
 display1:
+    mov ax, 0xb800
+    mov es, ax
     mov byte [es:0x00], 'H'
     mov byte [es:0x01], 0xA4
     mov byte [es:0x02], 'i'
