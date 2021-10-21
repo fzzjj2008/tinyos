@@ -1,6 +1,6 @@
-SECTION MBR vstart=0x7c00
-global main
-main:
+org 07c00h
+global start
+start:
     mov ax, cs
     mov ds, ax
     mov es, ax
