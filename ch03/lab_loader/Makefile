@@ -18,8 +18,8 @@ qemu:
 	# qemu-system-i386 -hda $(TINYIMG) -enable-kvm -vnc :0 -monitor stdio
 	qemu-system-x86_64 -hda $(TINYIMG) -enable-kvm -vnc :0 -monitor stdio
 gdb:
-	# qemu-system-i386 -S -s -hda $(TINYIMG) -enable-kvm -vnc :0 -monitor stdio
-	qemu-system-x86_64 -S -s -hda $(TINYIMG) -enable-kvm -vnc :0 -monitor stdio
+	# qemu-system-i386 -S -s -hda $(TINYIMG) -vnc :0 -monitor stdio
+	qemu-system-x86_64 -S -s -hda $(TINYIMG) -vnc :0 -monitor stdio
 	# gdb -q -x ../tool/gdbinit
 clean:
 	rm -rf $(BINDIR)
