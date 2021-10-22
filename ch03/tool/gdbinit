@@ -1,4 +1,3 @@
-set arch i386:x86-64
 file obj/mbr
 target remote :1234
 layout asm
