@@ -2,3 +2,5 @@ file obj/mbr
 target remote :1234
 layout asm
 focus cmd
+break *0x7c00
+continue
