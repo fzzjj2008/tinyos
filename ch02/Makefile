@@ -10,7 +10,5 @@ all:
 	dd if=$(BINDIR)/mbr.bin of=$(TINYIMG) bs=512 count=1 conv=notrunc
 qemu:
 	qemu-system-x86_64 -hda $(TINYIMG) -enable-kvm -monitor stdio -vnc :0
-gdb:
-	qemu-system-x86_64 -S -s -hda $(TINYIMG) -enable-kvm -monitor stdio -vnc :0
 clean:
 	rm -rf $(BINDIR)
