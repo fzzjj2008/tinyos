@@ -85,18 +85,18 @@ rd_disk_m_16:
 not_ready:
     nop
     inb %dx, %al
-    and $0x88, %al
-    cmp $0x08, %al
+    and $0x88, %al    # status寄存器第3位表示硬件准备好数据，可以输出了
+    cmp $0x08, %al    # status寄存器第7位1表示硬盘正忙
     jnz not_ready
 
 # 第5步：从0x1f0端口读数据
     movw %di, %ax
-    movl $0x100, %edx
+    movl $0x100, %edx    # 一个扇区有512字节，总共读取256次
     mulw %dx
     movw %ax, %cx
     movl $0x1f0, %edx
 go_on_read:
-    inw %dx, %ax
+    inw %dx, %ax         # 每次读取1个字，即2个字节
     movw %ax, %ds:(%bx)
     addw $2, %bx
     loop go_on_read
