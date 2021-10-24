@@ -24,7 +24,7 @@ all:
 	$(CC) $(CFLAGS) -c $(BOOTDIR)/loader.S -o $(OBJDIR)/$(BOOTDIR)/loader.o
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0x900 $(OBJDIR)/$(BOOTDIR)/loader.o -o $(OBJDIR)/loader
 	$(OBJCOPY) $(OBJDIR)/loader $(BINDIR)/loader.bin
-	dd if=$(BINDIR)/loader.bin of=$(TINYIMG) bs=512 count=1 conv=notrunc
+	dd if=$(BINDIR)/loader.bin of=$(TINYIMG) bs=512 count=1 seek=2 conv=notrunc
 objdump:
 	objdump -d $(OBJDIR)/$(BOOTDIR)/mbr.o
 hexdump:
