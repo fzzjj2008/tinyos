@@ -91,13 +91,13 @@ not_ready:
 
 # 第5步：从0x1f0端口读数据
     movw %di, %ax
-    movl $0x100, %edx    # 一个扇区有512字节，总共读取256次
+    movl $256, %edx   # 一个扇区有512字节，总共读取256次
     mulw %dx
     movw %ax, %cx
     movl $0x1f0, %edx
 go_on_read:
-    inw %dx, %ax         # 每次读取1个字，即2个字节
-    movw %ax, %ds:(%bx)
+    inw %dx, %ax      # 每次读取1个字，即2个字节
+    movw %ax, (%bx)
     addw $2, %bx
     loop go_on_read
     ret
