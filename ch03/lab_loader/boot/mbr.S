@@ -95,12 +95,10 @@ not_ready:
     mulw %dx
     movw %ax, %cx
     movl $0x1f0, %edx
-    movw %bx, %di
 go_on_read:
     inw %dx, %ax
     movw %ax, %ds:(%bx)
     addw $2, %bx
-    addw $2, %di
     loop go_on_read
     ret
 
