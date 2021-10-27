@@ -40,9 +40,6 @@ main:
     # 加载GDT
     lgdt gdt_ptr
 
-spin2:
-    jmp spin2
-
     # CR0 PE位开启保护模式
     movl %cr0, %eax
     orl  $CR0_PE_ON, %eax
@@ -73,13 +70,13 @@ spin:
 #   null seg: 0
 #   code seg: base=0x0, lim=0xfffff
 #   data seg: base=0x0, lim=0xfffff
-#   video seg: base=0xb8000/4k=0xb8, lim=(0xbffff-0xb8000)/4k=0x7
+#   video seg: base=0xb8000, lim=(0xbffff-0xb8000)/4k=0x7
 .p2align 2                                         # force 4 byte alignment
 gdt:
     SEG_ASM_NULL                                   # null segment
     SEG_ASM(STA_X, 0x0, 0xfffff)                   # code segment
     SEG_ASM(STA_W, 0x0, 0xfffff)                   # data segment
-    SEG_ASM(STA_W, 0xb8, 0x7)                      # video segment
+    SEG_ASM(STA_W, 0xb8000, 0x7)                   # video segment
 # GDTR寄存器
 gdt_ptr:
     .word 31             # GDT界限 sizeof(gdt) - 1
