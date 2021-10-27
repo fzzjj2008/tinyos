@@ -47,7 +47,7 @@ rd_disk_m_16:
     movw %cx, %di          # 备份cx
 
 # 第1步：设置读取的扇区数
-    movl $0x001f2, %edx
+    movl $0x1f2, %edx
     movb %cl, %al
     outb %al, %dx
 
@@ -55,29 +55,29 @@ rd_disk_m_16:
 
 # 第2步：将LBA地址存入0x1f3~0x1f6
     # LBA地址7~0位写入0x1f3
-    movl $0x001f3, %edx
+    movl $0x1f3, %edx
     outb %al, %dx
 
     # LBA地址15~8位写入0x1f4
     movb $8, %cl
     shr %cl, %eax
-    movl $0x001f4, %edx
+    movl $0x1f4, %edx
     outb %al, %dx
 
     # LBA地址23~16位写入0x1f5
     shr %cl, %eax
-    movl $0x001f5, %edx
+    movl $0x1f5, %edx
     outb %al, %dx
 
     # LBA地址24~27位写入0x1f6
     shr %cl, %eax
     and $0x0f, %al
     or $0xe0, %al        # 设置7~4位为1110, 表示LBA模式
-    movl $0x001f6, %edx
+    movl $0x1f6, %edx
     outb %al, %dx
 
 # 第3步：向0x1f7端口写入读命令0x20
-    movl $0x001f7, %edx
+    movl $0x1f7, %edx
     movb $0x20, %al
     outb %al, %dx
 
