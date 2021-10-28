@@ -45,6 +45,7 @@ main:
     orl  $CR0_PE_ON, %eax
     movl %eax, %cr0
 
+    # 跳转到GDT代码段，并清空流水线
     ljmp $SELECTOR_CODE, $p_mode_start
 
 
@@ -79,5 +80,5 @@ gdt:
     SEG_ASM(STA_W, 0xb8000, 0x7)                   # video segment
 # GDTR寄存器
 gdt_ptr:
-    .word 31             # GDT界限 sizeof(gdt) - 1
+    .word 0x800          # GDT界限, 支持256个GDT
     .long gdt            # GDT内存起始地址
