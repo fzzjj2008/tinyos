@@ -21,17 +21,16 @@ main:
     int $0x10
 
     # 显示1 MBR
-    xorw %di, %di
-    movb $'1',  %es:(%di)
-    movb $0xA4, %es:0x1(%di)
-    movb $' ',  %es:0x2(%di)
-    movb $0xA4, %es:0x3(%di)
-    movb $'M',  %es:0x4(%di)
-    movb $0xA4, %es:0x5(%di)
-    movb $'B',  %es:0x6(%di)
-    movb $0xA4, %es:0x7(%di)
-    movb $'R',  %es:0x8(%di)
-    movb $0xA4, %es:0x9(%di)
+    movb $'1',  %es:(0x0)
+    movb $0xA4, %es:(0x1)
+    movb $' ',  %es:(0x2)
+    movb $0xA4, %es:(0x3)
+    movb $'M',  %es:(0x4)
+    movb $0xA4, %es:(0x5)
+    movb $'B',  %es:(0x6)
+    movb $0xA4, %es:(0x7)
+    movb $'R',  %es:(0x8)
+    movb $0xA4, %es:(0x9)
 
     # 读取第2块扇区，跳转执行BOOT LOADER
     movl $LOADER_START_SECTOR, %eax  # 起始扇区LBA地址
