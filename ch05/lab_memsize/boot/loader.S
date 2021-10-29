@@ -6,7 +6,6 @@
 .set SELECTOR_DATA,     0x10          # data segment selector, index=0x2, ti=0, rpl=00
 .set SELECTOR_VIDEO,    0x18          # video segment selector, index=0x3, ti=0, rpl=00
 .set CR0_PE_ON,         0x1           # protected mode enable flag 
-.set SMAP,              0x534d4150    # ascii 'SMAP'
 
 ##################################################
 # 实模式
@@ -36,8 +35,9 @@ main:
 
 
 ##################################################
-# 获取内存
+# 获取内存，参考Linux实现，使用三种方式获取
 ##################################################
+#define     SMAP        0x534d4150    # ascii 'SMAP'
 get_mem_size:
 # 使用BIOS 0x15中断0xE820子功能获取内存
 mem_e820:

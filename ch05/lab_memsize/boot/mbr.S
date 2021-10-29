@@ -20,7 +20,7 @@ main:
     movw $0x184f, %dx
     int $0x10
 
-    # 读取第2块扇区，跳转执行BOOT LOADER
+    # 读取第2-5块扇区，跳转执行BOOT LOADER
     movl $LOADER_START_SECTOR, %eax  # 起始扇区LBA地址
     movw $LOADER_BASE_ADDR, %bx      # 将数据写入的内存地址
     movw $4, %cx                     # 读入的扇区数
@@ -28,7 +28,9 @@ main:
     jmp LOADER_BASE_ADDR
 
 
+##################################################
 # 读磁盘
+##################################################
 rd_disk_m_16:
     movl %eax, %esi        # 备份eax
     movw %cx, %di          # 备份cx
