@@ -15,6 +15,7 @@ main:
     # 获取内存
     call get_mem_size
 
+enter_protect_mode:
     # 打开A20
     inb $0x92, %al
     or $2, %al
@@ -37,11 +38,11 @@ main:
 ##################################################
 # 获取内存，参考Linux实现，使用三种方式获取
 ##################################################
-#define     SMAP     0x534d4150     # ascii 'SMAP'
+.set SMAP,     0x534d4150           # ascii 'SMAP'
 total_mem_bytes:
-    .word 0
-ards:
-    .rept 3
+    .int 0
+ards_buf:
+    .rept 256
     .byte 0
     .endr
 ards_nr:
@@ -52,7 +53,7 @@ get_mem_size:
 mem_e820:
     xorl %ebx, %ebx
     movl $SMAP, %edx
-    movw $ards_buf, %di
+    movl $ards_buf, %edi
 e820_loop:
     movl $0xe820, %eax
     movl $20, %ecx                  # ARDS地址范围描述符结构大小是20字节

@@ -31,9 +31,9 @@ objdump:
 hexdump:
 	hexdump -C $(BINDIR)/mbr.bin
 qemu:
-	qemu-system-x86_64 -hda $(TINYIMG) -enable-kvm -vnc :0 -monitor stdio
+	qemu-system-x86_64 -hda $(TINYIMG) -m 32M -enable-kvm -vnc :0 -monitor stdio
 debug:
-	qemu-system-x86_64 -S -s -hda $(TINYIMG) -vnc :0 -monitor stdio
+	qemu-system-x86_64 -S -s -hda $(TINYIMG) -m 32M -vnc :0 -monitor stdio
 gdb:
 	gdb -q -x ../tool/gdbinit
 clean:
