@@ -25,7 +25,7 @@ main:
     movw $LOADER_BASE_ADDR, %bx      # 将数据写入的内存地址
     movw $4, %cx                     # 读入的扇区数
     call rd_disk_m_16
-    jmp LOADER_BASE_ADDR
+    jmp LOADER_BASE_ADDR + 0x300
 
 
 ##################################################

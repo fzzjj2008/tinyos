@@ -6,53 +6,24 @@
 .set SELECTOR_DATA,     0x10        # data segment selector, index=0x2, ti=0, rpl=00
 .set SELECTOR_VIDEO,    0x18        # video segment selector, index=0x3, ti=0, rpl=00
 .set CR0_PE_ON,         0x1         # protected mode enable flag
-.set CR0_PG_ON,         0x80000000  # paging enable flag
 
 ##################################################
-# 实模式
+# GDT表
+#   null seg: 0
+#   code seg: base=0x0, lim=0xfffff
+#   data seg: base=0x0, lim=0xfffff
+#   video seg: base=0xb8000, lim=(0xbffff-0xb8000)/4k=0x7
 ##################################################
-.globl main
-main:
-    # 获取内存
-    call get_mem_size
-
-    # 创建页目录及页表，初始化页内存位图
-page_table_init:
-    call setup_page
-    sgdt gdt_ptr
-    movl 2(gdt_ptr), %ebx
-    orl 0xc0000000, 0x1c(%ebx)
-    addl 0xc0000000, 0x2(gdt_ptr)
-    addl 0xc0000000, %esp
-
-    movl $PAGE_DIR_TABLE_POS, %eax
-    movl %eax, %cr3
-
-    movl %cr0, %eax
-    orl  $CR0_PG_ON, %eax
-    movl %eax, %cr0
-
-    # 重新加载
-    lgdt gdt_ptr
-
-enter_protect_mode:
-    # 打开A20
-    inb $0x92, %al
-    or $2, %al
-    outb %al, $0x92
-
-    # 关闭中断
-    cli
-    # 加载GDT
-    lgdt gdt_ptr
-
-    # CR0 PE位开启保护模式
-    movl %cr0, %eax
-    orl  $CR0_PE_ON, %eax
-    movl %eax, %cr0
-
-    # 跳转到GDT代码段，并清空流水线
-    ljmp $SELECTOR_CODE, $p_mode_start
+.p2align 2                                          # force 4 byte alignment
+gdt:
+    SEG_ASM_NULL                                    # null segment
+    SEG_ASM(STA_X, 0x0, 0xfffff)                    # code segment
+    SEG_ASM(STA_W, 0x0, 0xfffff)                    # data segment
+    SEG_ASM(STA_W, 0xb8000, 0x7)                    # video segment
+# GDTR寄存器
+gdt_ptr:
+    .word 4*8-1                                     # GDT界限, 支持4个GDT
+    .long gdt                                       # GDT内存起始地址
 
 
 ##################################################
@@ -62,9 +33,7 @@ enter_protect_mode:
 total_mem_bytes:
     .int 0
 ards_buf:
-    .rept 256
-    .byte 0
-    .endr
+    .fill 256, 1, 0
 ards_nr:
     .word 0
 
@@ -72,6 +41,7 @@ get_mem_size:
 # 使用BIOS 0x15中断0xE820子功能获取内存
 mem_e820:
     xorl %ebx, %ebx
+    movw %bx, %es
     movl $SMAP, %edx
     movl $ards_buf, %edi
 e820_loop:
@@ -93,7 +63,7 @@ e820_loop:
 e820_find_max_mem_area:
     movl (%ebx), %eax               # base_add_low
     addl 8(%ebx), %eax              # eax = base_add_low + length_low
-    addl 20, %ebx                   # ebx指向下一个ARDS结构体
+    addl $20, %ebx                   # ebx指向下一个ARDS结构体
     cmpl %eax, %edx                 # if (eax > edx) { edx = eax; }
     jge e820_next_ards
     movl %eax, %edx
@@ -143,8 +113,22 @@ mem_88:
 
 mem_get_ok:
     movl %edx, (total_mem_bytes)
+    # 输出OK, edx = 0x2000000 = 32 MB
+    # i r edx
+    # x/x total_mem_bytes
+    movl $0xb800, %eax
+    movw %ax, %es
+    movb $'O',  %es:(0x0)
+    movb $'K',  %es:(0x2)
     ret
 mem_get_fail:
+    # 输出FAIL
+    movl $0xb800, %eax
+    movw %ax, %es
+    movb $'F',  %es:(0x0)
+    movb $'A',  %es:(0x2)
+    movb $'I',  %es:(0x4)
+    movb $'L',  %es:(0x6)
     ret
 
 
@@ -241,6 +225,54 @@ mem_cpy:
 
 
 ##################################################
+# 实模式
+##################################################
+.org 0x300
+main:
+    # 获取内存
+    call get_mem_size
+
+# 创建页目录及页表，初始化页内存位图
+page_table_init:
+    call setup_page
+    sgdt gdt_ptr
+    movl 2(gdt_ptr), %ebx
+    orl 0xc0000000, 0x1c(%ebx)
+    addl 0xc0000000, 0x2(gdt_ptr)
+    addl 0xc0000000, %esp
+
+    movl $PAGE_DIR_TABLE_POS, %eax
+    movl %eax, %cr3
+
+    movl %cr0, %eax
+    orl  $CR0_PG_ON, %eax
+    movl %eax, %cr0
+
+    # 重新加载
+    lgdt gdt_ptr
+
+# 进入保护模式
+enter_protect_mode:
+    # 打开A20
+    inb $0x92, %al
+    or $2, %al
+    outb %al, $0x92
+
+    # 关闭中断
+    cli
+    # 加载GDT
+    lgdt gdt_ptr
+
+    # CR0 PE位开启保护模式
+    movl %cr0, %eax
+    orl  $CR0_PE_ON, %eax
+    movl %eax, %cr0
+
+    # 跳转到GDT代码段，并清空流水线
+    ljmp $SELECTOR_CODE, $p_mode_start
+
+
+##################################################
 # 保护模式
 ##################################################
 .code32
@@ -253,26 +285,8 @@ p_mode_start:
     movl $SELECTOR_VIDEO, %eax
     movw %ax, %gs
 
-enter_kernel:
-    call kernel_init
-    mov $0xc009f000, %esp
-    jmp KERNEL_ENTRY_POINT
-
-
-##################################################
-# GDT表
-#   null seg: 0
-#   code seg: base=0x0, lim=0xfffff
-#   data seg: base=0x0, lim=0xfffff
-#   video seg: base=0xb8000, lim=(0xbffff-0xb8000)/4k=0x7
-##################################################
-.p2align 2                                         # force 4 byte alignment
-gdt:
-    SEG_ASM_NULL                                   # null segment
-    SEG_ASM(STA_X, 0x0, 0xfffff)                   # code segment
-    SEG_ASM(STA_W, 0x0, 0xfffff)                   # data segment
-    SEG_ASM(STA_W, 0xb8000, 0x7)                   # video segment
-# GDTR寄存器
-gdt_ptr:
-    .word 0x800          # GDT界限, 支持256个GDT
-    .long gdt            # GDT内存起始地址
+    # 输出P
+    movb $'P',  %gs:(0xa0)
+    movb $0xA4, %gs:(0xa1)
+spin:
+    jmp spin
