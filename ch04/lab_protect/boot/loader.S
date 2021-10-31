@@ -58,7 +58,7 @@ main:
 p_mode_start:
     movl $SELECTOR_DATA, %eax
     movw %ax, %ds
-    movw %ax, %ss
+    movw %ax, %es
     movw %ax, %ss
     movl $LOADER_BASE_ADDR, %esp
     movl $SELECTOR_VIDEO, %eax

@@ -63,7 +63,7 @@ e820_loop:
 e820_find_max_mem_area:
     movl (%ebx), %eax               # base_add_low
     addl 8(%ebx), %eax              # eax = base_add_low + length_low
-    addl $20, %ebx                   # ebx指向下一个ARDS结构体
+    addl $20, %ebx                  # ebx指向下一个ARDS结构体
     cmpl %eax, %edx                 # if (eax > edx) { edx = eax; }
     jge e820_next_ards
     movl %eax, %edx
@@ -112,10 +112,10 @@ mem_88:
     addl $0x100000, %edx            # 获取的大小比实际少1MB，补偿1MB
 
 mem_get_ok:
-    movl %edx, (total_mem_bytes)
     # 输出OK, edx = 0x2000000 = 32 MB
     # i r edx
     # x/x total_mem_bytes
+    movl %edx, (total_mem_bytes)
     movl $0xb800, %eax
     movw %ax, %es
     movb $'O',  %es:(0x0)
@@ -167,7 +167,7 @@ enter_protect_mode:
 p_mode_start:
     movl $SELECTOR_DATA, %eax
     movw %ax, %ds
-    movw %ax, %ss
+    movw %ax, %es
     movw %ax, %ss
     movl $LOADER_BASE_ADDR, %esp
     movl $SELECTOR_VIDEO, %eax
