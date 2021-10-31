@@ -1,6 +1,7 @@
 OBJDIR	:= obj
 BINDIR  := bin
 BOOTDIR := boot
+KERNDIR := kernel
 TINYIMG := $(BINDIR)/os.img
 
 CC      := gcc
@@ -12,6 +13,7 @@ LDFLAGS := -m elf_i386 -nostdlib -N -e main
 all:
 	mkdir -p $(BINDIR)
 	mkdir -p $(OBJDIR)/$(BOOTDIR)
+	mkdir -p $(OBJDIR)/$(KERNDIR)
 	qemu-img create -f raw $(TINYIMG) 1M
 
 	# mbr
@@ -26,13 +28,14 @@ all:
 	$(OBJCOPY) $(OBJDIR)/loader $(BINDIR)/loader.bin
 	dd if=$(BINDIR)/loader.bin of=$(TINYIMG) bs=512 count=4 seek=2 conv=notrunc
 
-	# kernal
-	$(CC) -c -o main.o main.c
-	ld kernel/main.o -Ttext 0xc0001500 -e main -o kernel/kernel.bin
-	dd if=kernel.bin of=$(TINYIMG) bs=512 count=200 seek=9 conv=notrunc
+	# kernel
+	$(CC) $(CFLAGS) -c -o $(OBJDIR)/$(KERNDIR)/main.o $(KERNDIR)/main.c
+	$(LD) $(LDFLAGS) -Ttext 0xc0001500 $(OBJDIR)/$(KERNDIR)/main.o -o $(BINDIR)/kernel.bin
+	dd if=$(BINDIR)/kernel.bin of=$(TINYIMG) bs=512 count=200 seek=9 conv=notrunc
 objdump:
 	# objdump -d $(OBJDIR)/$(BOOTDIR)/mbr.o
 	objdump -d $(OBJDIR)/$(BOOTDIR)/loader.o
+	# objdump -d $(OBJDIR)/$(KERNDIR)/main.o
 hexdump:
 	hexdump -C $(BINDIR)/mbr.bin
 qemu:

@@ -2,6 +2,7 @@
 
 .code16
 .section .text
+.globl main
 .set SELECTOR_CODE,     0x8         # code segment selector, index=0x1, ti=0, rpl=00
 .set SELECTOR_DATA,     0x10        # data segment selector, index=0x2, ti=0, rpl=00
 .set SELECTOR_VIDEO,    0x18        # video segment selector, index=0x3, ti=0, rpl=00

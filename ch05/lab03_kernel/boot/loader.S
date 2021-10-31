@@ -2,6 +2,7 @@
 
 .code16
 .section .text
+.globl main
 .set SELECTOR_CODE,     0x8         # code segment selector, index=0x1, ti=0, rpl=00
 .set SELECTOR_DATA,     0x10        # data segment selector, index=0x2, ti=0, rpl=00
 .set SELECTOR_VIDEO,    0x18        # video segment selector, index=0x3, ti=0, rpl=00
@@ -174,6 +175,14 @@ p_mode_start:
     movl $SELECTOR_VIDEO, %eax
     movw %ax, %gs
 
+# 从磁盘加载kernel.bin
+load_kernel:
+    # 读取第2-5块扇区，跳转执行BOOT LOADER
+    movl $KERNEL_START_SECTOR, %eax     # 起始扇区LBA地址
+    movl $KERNEL_BIN_BASE_ADDR, %ebx    # 将数据写入的内存地址
+    movl $200, %ecx                     # 读入的扇区数
+    call rd_disk_m_32
+
 # 创建页目录及页表，初始化页内存位图
 page_table_init:
     call setup_page                 # 创建页目录及页表
@@ -199,6 +208,12 @@ page_table_init:
     # 输出P
     movb $'P',  %gs:(0xa0)
     movb $0xA4, %gs:(0xa1)
+
+# 进入kernel的main.c
+enter_kernel:
+    call kernel_init
+    movl $0xc009f000, %esp
+    jmp KERNEL_ENTRY_POINT
 spin:
     jmp spin
 
@@ -258,6 +273,70 @@ create_kernel_pde:
 
 
 ##################################################
+# 保护模式读磁盘
+##################################################
+rd_disk_m_32:
+    movl %eax, %esi                 # 备份eax
+    movw %cx, %di                   # 备份cx
+
+# 第1步：设置读取的扇区数
+    movl $0x1f2, %edx
+    movb %cl, %al
+    outb %al, %dx
+
+    movl %esi, %eax                 # 恢复eax
+
+# 第2步：将LBA地址存入0x1f3~0x1f6
+    # LBA地址7~0位写入0x1f3
+    movl $0x1f3, %edx
+    outb %al, %dx
+
+    # LBA地址15~8位写入0x1f4
+    movb $8, %cl
+    shr %cl, %eax
+    movl $0x1f4, %edx
+    outb %al, %dx
+
+    # LBA地址23~16位写入0x1f5
+    shr %cl, %eax
+    movl $0x1f5, %edx
+    outb %al, %dx
+
+    # LBA地址24~27位写入0x1f6
+    shr %cl, %eax
+    and $0x0f, %al
+    or $0xe0, %al                   # 设置7~4位为1110, 表示LBA模式
+    movl $0x1f6, %edx
+    outb %al, %dx
+
+# 第3步：向0x1f7端口写入读命令0x20
+    movl $0x1f7, %edx
+    movb $0x20, %al
+    outb %al, %dx
+
+# 第4步：检测硬盘状态
+not_ready:
+    nop
+    inb %dx, %al
+    and $0x88, %al                  # status寄存器第3位表示硬件准备好数据，可以输出了
+    cmp $0x08, %al                  # status寄存器第7位1表示硬盘正忙
+    jnz not_ready
+
+# 第5步：从0x1f0端口读数据
+    movw %di, %ax
+    movl $256, %edx                 # 一个扇区有512字节，总共读取256次
+    mulw %dx
+    movw %ax, %cx
+    movl $0x1f0, %edx
+go_on_read:
+    inw %dx, %ax                    # 每次读取1个字，即2个字节
+    movw %ax, (%bx)
+    addw $2, %bx
+    loop go_on_read
+    ret
+
+
+##################################################
 # 初始化内核
 ##################################################
 kernel_init:
@@ -265,13 +344,13 @@ kernel_init:
     xorl %ebx, %ebx
     xorl %ecx, %ecx
     xorl %edx, %edx
-    movw 42(KERNEL_BIN_BASE_ADDR), %dx
-    movl 28(KERNEL_BIN_BASE_ADDR), %ebx
+    movw (KERNEL_BIN_BASE_ADDR+42), %dx
+    movl (KERNEL_BIN_BASE_ADDR+28), %ebx
     addl $KERNEL_BIN_BASE_ADDR, %ebx
-    movw 44(KERNEL_BIN_BASE_ADDR), %cx
+    movw (KERNEL_BIN_BASE_ADDR+44), %cx
 
 each_segment:
-    cmpb PT_NULL, (%ebx)
+    cmpb $0, (%ebx)
     je PTNULL
 
     pushl 16(%ebx)
@@ -292,10 +371,10 @@ mem_cpy:
     pushl %ebp
     movl %esp, %ebp
     pushl %ecx
-    movl 8(%ebp), %edi                              # dst
-    movl 12(%ebp), %esi                             # src
-    movl 16(%ebp), %ecx                             # size
-    rep movsb                                       # 逐字节拷贝
+    movl 8(%ebp), %edi              # dst
+    movl 12(%ebp), %esi             # src
+    movl 16(%ebp), %ecx             # size
+    rep movsb                       # 逐字节拷贝
     popl %ecx
     popl %ebp
     ret

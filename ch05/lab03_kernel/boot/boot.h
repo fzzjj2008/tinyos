@@ -1,11 +1,14 @@
 #ifndef __BOOT_H__
 #define __BOOT_H__
 
-/******************** loader ********************/
-#define LOADER_BASE_ADDR        0x900           // Boot Loader起始地址
+/**************** loader和kernel ****************/
 #define LOADER_START_SECTOR     0x2             // Boot Loader起始扇区
+#define LOADER_BASE_ADDR        0x900           // Boot Loader内存起始地址
 #define LOADER_STACK_TOP        0x900           // 保护模式栈顶地址
 #define PAGE_DIR_TABLE_POS      0x100000        // 页目录表起始地址
+#define KERNEL_START_SECTOR     0x9             // kernel起始扇区
+#define KERNEL_BIN_BASE_ADDR    0x70000         // kernel.bin加载磁盘地址
+#define KERNEL_ENTRY_POINT      0xc0001500      // Kernel内存起始地址
 
 
 /********************* gdt **********************/
