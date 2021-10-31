@@ -184,7 +184,7 @@ page_table_init:
     movl (gdt_ptr+2), %ebx
     addl $SELECTOR_VIDEO, %ebx
     orl $0xc0000000, 4(%ebx)        # GDT显存段段基址=0xc00b8000(此处段描述符31~24位是段基址31~24位，或运算修改段基址)
-    addl $0xc0000000, (gdt_ptr+2)   # GDTR基址加上0xc0000000，将GDT移到内核空间中
+    addl $0xc0000000, (gdt_ptr+2)   # GDT基址=0xc0000900，将GDT移到内核空间中
     addl $0xc0000000, %esp          # 栈地址修改成内核使用的地址
 
     movl $PAGE_DIR_TABLE_POS, %eax  # 页目录地址赋给CR3
