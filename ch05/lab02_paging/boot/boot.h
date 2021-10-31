@@ -4,6 +4,7 @@
 /******************** loader ********************/
 #define LOADER_BASE_ADDR        0x900           // Boot Loader起始地址
 #define LOADER_START_SECTOR     0x2             // Boot Loader起始扇区
+#define LOADER_STACK_TOP        0x900           // 保护模式栈顶地址
 #define PAGE_DIR_TABLE_POS      0x100000        // 页目录表起始地址
 
 

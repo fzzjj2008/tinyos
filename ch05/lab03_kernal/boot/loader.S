@@ -6,30 +6,25 @@
 .set SELECTOR_DATA,     0x10        # data segment selector, index=0x2, ti=0, rpl=00
 .set SELECTOR_VIDEO,    0x18        # video segment selector, index=0x3, ti=0, rpl=00
 .set CR0_PE_ON,         0x1         # protected mode enable flag
+.set CR0_PG_ON,         0x80000000  # paging enable flag
 
 ##################################################
-# GDT表
+# GDT表 0x900~0x920
 #   null seg: 0
 #   code seg: base=0x0, lim=0xfffff
 #   data seg: base=0x0, lim=0xfffff
 #   video seg: base=0xb8000, lim=(0xbffff-0xb8000)/4k=0x7
 ##################################################
-.p2align 2                                          # force 4 byte alignment
+.p2align 2                          # force 4 byte alignment
 gdt:
-    SEG_ASM_NULL                                    # null segment
-    SEG_ASM(STA_X, 0x0, 0xfffff)                    # code segment
-    SEG_ASM(STA_W, 0x0, 0xfffff)                    # data segment
-    SEG_ASM(STA_W, 0xb8000, 0x7)                    # video segment
+    SEG_ASM_NULL                    # null segment
+    SEG_ASM(STA_X, 0x0, 0xfffff)    # code segment
+    SEG_ASM(STA_W, 0x0, 0xfffff)    # data segment
+    SEG_ASM(STA_W, 0xb8000, 0x7)    # video segment
 # GDTR寄存器
 gdt_ptr:
-    .word 4*8-1                                     # GDT界限, 支持4个GDT
-    .long gdt                                       # GDT内存起始地址
-
-
-##################################################
-# 获取内存，参考Linux实现，使用三种方式获取
-##################################################
-.set SMAP,     0x534d4150           # ascii 'SMAP'
+    .word 4*8-1                     # GDT界限, 支持4个GDT
+    .long gdt                       # GDT内存起始地址
 total_mem_bytes:
     .int 0
 ards_buf:
@@ -37,6 +32,40 @@ ards_buf:
 ards_nr:
     .word 0
 
+
+##################################################
+# 实模式
+##################################################
+.org 0x300
+main:
+    # 获取内存
+    call get_mem_size
+
+# 进入保护模式
+enter_protect_mode:
+    # 打开A20
+    inb $0x92, %al
+    or $2, %al
+    outb %al, $0x92
+
+    # 关闭中断
+    cli
+    # 加载GDT
+    lgdt gdt_ptr
+
+    # CR0 PE位开启保护模式
+    movl %cr0, %eax
+    orl  $CR0_PE_ON, %eax
+    movl %eax, %cr0
+
+    # 跳转到GDT代码段，并清空流水线
+    ljmp $SELECTOR_CODE, $p_mode_start
+
+
+##################################################
+# 获取内存，参考Linux实现，使用三种方式获取
+##################################################
+.set SMAP,     0x534d4150           # ascii 'SMAP'
 get_mem_size:
 # 使用BIOS 0x15中断0xE820子功能获取内存
 mem_e820:
@@ -63,7 +92,7 @@ e820_loop:
 e820_find_max_mem_area:
     movl (%ebx), %eax               # base_add_low
     addl 8(%ebx), %eax              # eax = base_add_low + length_low
-    addl $20, %ebx                   # ebx指向下一个ARDS结构体
+    addl $20, %ebx                  # ebx指向下一个ARDS结构体
     cmpl %eax, %edx                 # if (eax > edx) { edx = eax; }
     jge e820_next_ards
     movl %eax, %edx
@@ -112,10 +141,10 @@ mem_88:
     addl $0x100000, %edx            # 获取的大小比实际少1MB，补偿1MB
 
 mem_get_ok:
-    movl %edx, (total_mem_bytes)
     # 输出OK, edx = 0x2000000 = 32 MB
     # i r edx
     # x/x total_mem_bytes
+    movl %edx, (total_mem_bytes)
     movl $0xb800, %eax
     movw %ax, %es
     movb $'O',  %es:(0x0)
@@ -133,14 +162,62 @@ mem_get_fail:
 
 
 ##################################################
-# 创建页目录及页表
+# 保护模式
+##################################################
+.code32
+p_mode_start:
+    movl $SELECTOR_DATA, %eax
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %ss
+    movl $LOADER_STACK_TOP, %esp
+    movl $SELECTOR_VIDEO, %eax
+    movw %ax, %gs
+
+# 创建页目录及页表，初始化页内存位图
+page_table_init:
+    call setup_page                 # 创建页目录及页表
+    sgdt gdt_ptr                    # 先保存gdtr到内存中
+
+    # 4G虚拟空间划分为：用户空间0~0xbfffffff、内核空间0xc0000000~0xffffffff
+    # 由于打印功能放内核实现，故显存段段基址改为3G以上
+    movl (gdt_ptr+2), %ebx
+    addl $SELECTOR_VIDEO, %ebx
+    orl $0xc0000000, 4(%ebx)        # GDT显存段段基址=0xc00b8000(此处段描述符31~24位是段基址31~24位，或运算修改段基址)
+    addl $0xc0000000, (gdt_ptr+2)   # GDTR基址加上0xc0000000，将GDT移到内核空间中
+    addl $0xc0000000, %esp          # 栈地址修改成内核使用的地址
+
+    movl $PAGE_DIR_TABLE_POS, %eax  # 页目录地址赋给CR3
+    movl %eax, %cr3
+
+    movl %cr0, %eax                 # 页目录地址赋给CR3
+    orl  $CR0_PG_ON, %eax
+    movl %eax, %cr0
+
+    lgdt gdt_ptr                    # 重新加载gdtr
+
+    # 输出P
+    movb $'P',  %gs:(0xa0)
+    movb $0xA4, %gs:(0xa1)
+spin:
+    jmp spin
+
+
+##################################################
+# 创建页目录及页表 (实际只初始化了page_dir和page_table1)
+#   page_dir:     0x100000~0x100fff, 1024项, 4096 bytes
+#     user_space: 0x101000~0x101bff, 768项
+#     kern_space: 0x101c00~0x101fff, 256项
+#   page_table1:  0x101000~0x101fff, 1024项, 4096 bytes, 对应物理地址0~0x3fffff (实际tinyos只用了0~0xfffff 1MB内存)
+#   page_table2:  0x102000~0x102fff, 1024项, 4096 bytes, 对应物理地址0x400000~0x7fffff (后续物理地址未使用)
+#   ...
 ##################################################
 setup_page:
 # 清理页目录占用空间
     movl $4096, %ecx
-    movl $0, %esi
+    movl $PAGE_DIR_TABLE_POS, %esi
 clear_page_dir:
-    movb $0, $PAGE_DIR_TABLE_POS(%esi)
+    movb $0, (%esi)
     incl %esi
     loop clear_page_dir
 
@@ -148,35 +225,35 @@ clear_page_dir:
 create_pde:
     movl $PAGE_DIR_TABLE_POS, %eax
     addl $0x1000, %eax
-    movl %eax, %ebx
-    orl $(PTE_U|PTE_W|PTE_E), %eax
-    movl %eax, (PAGE_DIR_TABLE_POS)
-    movl %eax, 0xc00(PAGE_DIR_TABLE_POS)
-    subl %0x1000, %eax
-    movl %eax, 4092(PAGE_DIR_TABLE_POS)
+    movl %eax, %ebx                 # eax=ebx=0x101000
+    orl $PTE_U+PTE_W+PTE_P, %eax
+    movl %eax, (PAGE_DIR_TABLE_POS)        # PDE0=0x101007, 指向页表1地址0x101000, 权限为US=1,RW=1,P=1
+    movl %eax, (PAGE_DIR_TABLE_POS+0xc00)  # PDE768=0x101007, 指向页表1地址0x101000, 权限为US=1,RW=1,P=1
+    subl $0x1000, %eax
+    movl %eax, (PAGE_DIR_TABLE_POS+4092)   # PDE1023=0x100007, 指向页目录表本身0x100000, 权限为US=1,RW=1,P=1
 
 # 创建页表项PTE
-    movl $256, %ecx
+    movl $256, %ecx                 # 填充页表1的0~255项。1张页表可表示4MB物理空间，实际tinyos只用了1MB内存，剩下没必要填充
     movl $0, %esi
-    movl $(PTE_U|PTE_W|PTE_E), %edx
+    movl $PTE_U+PTE_W+PTE_P, %edx
 create_pte:
-    movl %edx, (%ebx, %esi, 4)
-    addl $4096, %edx
-    incl %esi
-    loop create_pte
+    movl %edx, (%ebx, %esi, 4)      # PTE0=0x000007, 指向物理地址0x0, 权限为US=1,RW=1,P=1
+    addl $4096, %edx                # PTE1=0x001007, 指向物理地址0x1000, 权限为US=1,RW=1,P=1
+    incl %esi                       # ...
+    loop create_pte                 # PTE255=0x0FF007, 指向物理地址0xFF000, 权限为US=1,RW=1,P=1
 
-# 创建内核其它页表的PDE
+# 创建内核其它页表的PDE。此处只有用到页表1 0x101000，其它页表实际没用到。
     movl $PAGE_DIR_TABLE_POS, %eax
     addl $0x2000, %eax
-    orl $(PTE_U|PTE_W|PTE_E), %eax
-    movl $PAGE_DIR_TABLE_POS, %ebx
-    movl $254, %ecx
+    orl $PTE_U+PTE_W+PTE_P, %eax
+    movl $PAGE_DIR_TABLE_POS, %ebx  # eax=0x102007, ebx=0x100000
+    movl $254, %ecx                 # 填充页目录表的769~1022项
     movl $769, %esi
 create_kernel_pde:
-    movl %eax, (%ebx, %esi, 4)
-    incl %esi
-    addl $0x1000, %eax
-    loop create_kernel_pde
+    movl %eax, (%ebx, %esi, 4)      # PDE769=0x102007, 指向物理地址0x102000, 权限为US=1,RW=1,P=1
+    incl %esi                       # PDE770=0x103007, 指向物理地址0x103000, 权限为US=1,RW=1,P=1
+    addl $0x1000, %eax              # ...
+    loop create_kernel_pde          # PDE1022=0x1FF007, 指向物理地址0x1ff000, 权限为US=1,RW=1,P=1
     ret
 
 
@@ -222,71 +299,3 @@ mem_cpy:
     popl %ecx
     popl %ebp
     ret
-
-
-##################################################
-# 实模式
-##################################################
-.org 0x300
-main:
-    # 获取内存
-    call get_mem_size
-
-# 创建页目录及页表，初始化页内存位图
-page_table_init:
-    call setup_page
-    sgdt gdt_ptr
-    movl 2(gdt_ptr), %ebx
-    orl 0xc0000000, 0x1c(%ebx)
-    addl 0xc0000000, 0x2(gdt_ptr)
-    addl 0xc0000000, %esp
-
-    movl $PAGE_DIR_TABLE_POS, %eax
-    movl %eax, %cr3
-
-    movl %cr0, %eax
-    orl  $CR0_PG_ON, %eax
-    movl %eax, %cr0
-
-    # 重新加载
-    lgdt gdt_ptr
-
-# 进入保护模式
-enter_protect_mode:
-    # 打开A20
-    inb $0x92, %al
-    or $2, %al
-    outb %al, $0x92
-
-    # 关闭中断
-    cli
-    # 加载GDT
-    lgdt gdt_ptr
-
-    # CR0 PE位开启保护模式
-    movl %cr0, %eax
-    orl  $CR0_PE_ON, %eax
-    movl %eax, %cr0
-
-    # 跳转到GDT代码段，并清空流水线
-    ljmp $SELECTOR_CODE, $p_mode_start
-
-
-##################################################
-# 保护模式
-##################################################
-.code32
-p_mode_start:
-    movl $SELECTOR_DATA, %eax
-    movw %ax, %ds
-    movw %ax, %ss
-    movw %ax, %ss
-    movl $LOADER_BASE_ADDR, %esp
-    movl $SELECTOR_VIDEO, %eax
-    movw %ax, %gs
-
-    # 输出P
-    movb $'P',  %gs:(0xa0)
-    movb $0xA4, %gs:(0xa1)
-spin:
-    jmp spin
