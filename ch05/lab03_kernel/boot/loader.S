@@ -177,7 +177,6 @@ p_mode_start:
 
 # 从磁盘加载kernel.bin
 load_kernel:
-    # 读取第2-5块扇区，跳转执行BOOT LOADER
     movl $KERNEL_START_SECTOR, %eax     # 起始扇区LBA地址
     movl $KERNEL_BIN_BASE_ADDR, %ebx    # 将数据写入的内存地址
     movl $200, %ecx                     # 读入的扇区数
@@ -330,8 +329,8 @@ not_ready:
     movl $0x1f0, %edx
 go_on_read:
     inw %dx, %ax                    # 每次读取1个字，即2个字节
-    movw %ax, (%bx)
-    addw $2, %bx
+    movw %ax, (%ebx)
+    addl $2, %ebx
     loop go_on_read
     ret
 
@@ -344,24 +343,24 @@ kernel_init:
     xorl %ebx, %ebx
     xorl %ecx, %ecx
     xorl %edx, %edx
-    movw (KERNEL_BIN_BASE_ADDR+42), %dx
-    movl (KERNEL_BIN_BASE_ADDR+28), %ebx
+    movw (KERNEL_BIN_BASE_ADDR+42), %dx     # e_phentsize
+    movl (KERNEL_BIN_BASE_ADDR+28), %ebx    # e_phoff
     addl $KERNEL_BIN_BASE_ADDR, %ebx
-    movw (KERNEL_BIN_BASE_ADDR+44), %cx
+    movw (KERNEL_BIN_BASE_ADDR+44), %cx     # e_phnum
 
 each_segment:
     cmpb $0, (%ebx)
-    je PTNULL
+    je PTNULL                               # program header not use
 
-    pushl 16(%ebx)
-    movl 4(%ebx), %eax
-    addl $KERNEL_BIN_BASE_ADDR, %eax
-    pushl %eax
-    pushl 8(%ebx)
+    pushl 16(%ebx)                          # p_filesz，mem_cpy第三个参数size
+    movl 4(%ebx), %eax                      # p_offset
+    addl $KERNEL_BIN_BASE_ADDR, %eax        # eax=0x70074, ebx=0x70034
+    pushl %eax                              # mem_cpy第二个参数src
+    pushl 8(%ebx)                           # mem_cpy第一个参数dst
     call mem_cpy
-    addl $12, %esp
+    addl $12, %esp                          # 弹出栈
 PTNULL:
-    addl %edx, %ebx
+    addl %edx, %ebx                         # edx为program header大小，ebx指向下一个program header
     loop each_segment
     ret
 
