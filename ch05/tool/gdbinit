@@ -1,5 +1,6 @@
 #file obj/mbr
 file obj/loader
+#file bin/kernel.bin
 target remote :1234
 layout split
 focus cmd
