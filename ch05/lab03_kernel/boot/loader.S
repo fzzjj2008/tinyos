@@ -343,24 +343,24 @@ kernel_init:
     xorl %ebx, %ebx
     xorl %ecx, %ecx
     xorl %edx, %edx
-    movw (KERNEL_BIN_BASE_ADDR+42), %dx     # e_phentsize
-    movl (KERNEL_BIN_BASE_ADDR+28), %ebx    # e_phoff
-    addl $KERNEL_BIN_BASE_ADDR, %ebx
-    movw (KERNEL_BIN_BASE_ADDR+44), %cx     # e_phnum
+    movw (KERNEL_BIN_BASE_ADDR+42), %dx     # e_phentsize, 段表项大小
+    movl (KERNEL_BIN_BASE_ADDR+28), %ebx    # e_phoff, 段表偏移
+    addl $KERNEL_BIN_BASE_ADDR, %ebx        # ebx=0x70034, 段表地址
+    movw (KERNEL_BIN_BASE_ADDR+44), %cx     # e_phnum, 段表项数目
 
 each_segment:
     cmpb $0, (%ebx)
-    je PTNULL                               # program header not use
+    je PTNULL                               # p_type=0，指向下一个段表
 
-    pushl 16(%ebx)                          # p_filesz，mem_cpy第三个参数size
+    pushl 16(%ebx)                          # p_filesz，段大小，mem_cpy第三个参数size=60
     movl 4(%ebx), %eax                      # p_offset
-    addl $KERNEL_BIN_BASE_ADDR, %eax        # eax=0x70074, ebx=0x70034
-    pushl %eax                              # mem_cpy第二个参数src
-    pushl 8(%ebx)                           # mem_cpy第一个参数dst
+    addl $KERNEL_BIN_BASE_ADDR, %eax        # 段物理地址
+    pushl %eax                              # mem_cpy第二个参数src=0x70074
+    pushl 8(%ebx)                           # mem_cpy第一个参数dst=0xc0001500
     call mem_cpy
     addl $12, %esp                          # 弹出栈
 PTNULL:
-    addl %edx, %ebx                         # edx为program header大小，ebx指向下一个program header
+    addl %edx, %ebx                         # ebx指向下一个段表项
     loop each_segment
     ret
 
