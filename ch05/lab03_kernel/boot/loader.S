@@ -350,7 +350,7 @@ kernel_init:
 
 each_segment:
     cmpb $0, (%ebx)
-    je PTNULL                               # p_type=0，指向下一个段表
+    je PTNULL                               # p_type=PT_NULL=0，则指向下一个段表
 
     pushl 16(%ebx)                          # p_filesz，段大小，mem_cpy第三个参数size=60
     movl 4(%ebx), %eax                      # p_offset
