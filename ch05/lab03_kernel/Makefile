@@ -29,7 +29,7 @@ all:
 	dd if=$(BINDIR)/loader.bin of=$(TINYIMG) bs=512 count=4 seek=2 conv=notrunc
 
 	# kernel
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/$(KERNDIR)/main.o $(KERNDIR)/main.c
+	$(CC) $(CFLAGS) -c $(KERNDIR)/main.c -o $(OBJDIR)/$(KERNDIR)/main.o
 	$(LD) $(LDFLAGS) -Ttext 0xc0001500 $(OBJDIR)/$(KERNDIR)/main.o -o $(BINDIR)/kernel.bin
 	dd if=$(BINDIR)/kernel.bin of=$(TINYIMG) bs=512 count=200 seek=9 conv=notrunc
 objdump:
