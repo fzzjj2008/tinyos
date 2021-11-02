@@ -338,6 +338,7 @@ go_on_read:
 ##################################################
 # 初始化内核
 ##################################################
+.set PT_NULL,     0x0                       # p_type为0，表示忽略此段
 kernel_init:
     xorl %eax, %eax
     xorl %ebx, %ebx
@@ -349,7 +350,7 @@ kernel_init:
     movw (KERNEL_BIN_BASE_ADDR+44), %cx     # e_phnum, 段表项数目
 
 each_segment:
-    cmpb $0, (%ebx)
+    cmpb $PT_NULL, (%ebx)
     je PTNULL                               # p_type=PT_NULL=0，则指向下一个段表
 
     pushl 16(%ebx)                          # p_filesz，段大小，mem_cpy第三个参数size=60
