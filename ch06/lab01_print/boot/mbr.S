@@ -20,6 +20,12 @@ main:
     movw $0x184f, %dx
     int $0x10
 
+    # 设置光标位置，BH = 页号，DH = 行，DL = 列
+    movb $2, %ah
+    movb $0, %bh
+    movw $0, %dx
+    int $0x10
+
     # 读取第2-5块扇区，跳转执行BOOT LOADER
     movl $LOADER_START_SECTOR, %eax  # 起始扇区LBA地址
     movw $LOADER_BASE_ADDR, %bx      # 将数据写入的内存地址
