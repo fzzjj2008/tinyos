@@ -2,7 +2,7 @@ OBJDIR	:= obj
 BINDIR  := bin
 BOOTDIR := boot
 KERNDIR := kernel
-INCDIR  := include
+LIBDIR  := lib
 TINYIMG := $(BINDIR)/os.img
 
 CC      := gcc
@@ -31,7 +31,7 @@ all:
 
 	# kernel
 	$(CC) $(CFLAGS) -c $(KERNDIR)/print.S -o $(OBJDIR)/$(KERNDIR)/print.o
-	$(CC) $(CFLAGS) -c $(KERNDIR)/main.c -I $(INCDIR)/ -o $(OBJDIR)/$(KERNDIR)/main.o
+	$(CC) $(CFLAGS) -c $(KERNDIR)/main.c -I $(LIBDIR) -o $(OBJDIR)/$(KERNDIR)/main.o
 	$(LD) $(LDFLAGS) -Ttext 0xc0001500 $(OBJDIR)/$(KERNDIR)/main.o $(OBJDIR)/$(KERNDIR)/print.o -o $(BINDIR)/kernel.bin
 	dd if=$(BINDIR)/kernel.bin of=$(TINYIMG) bs=512 count=200 seek=9 conv=notrunc
 objdump:
