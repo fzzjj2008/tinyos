@@ -8,7 +8,7 @@ TINYIMG := $(BINDIR)/os.img
 CC      := gcc
 LD      := ld
 OBJCOPY := objcopy -O binary
-CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc -fno-stack-protector -Os -nostdinc
+CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -nostdinc -fno-stack-protector -Os -nostdinc
 LDFLAGS := -m elf_i386 -nostdlib -N -e main
 
 all:

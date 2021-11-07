@@ -1,16 +1,19 @@
 .code32
-.section .text
 .set SELECTOR_VIDEO,    0x18        # video segment selector, index=0x3, ti=0, rpl=00
+.section .data
+put_int_buffer:
+    .int 0, 0
 
 ##################################################
-# 获取光标位置
-#   bx: 光标位置
+# 获取光标位置，光标范围25*80=0~1999
+#   ax: 光标位置
 ##################################################
+.section .text
 .globl get_cursor
 get_cursor:
-    pushl %eax
+    # pushl %ebp
+    # movl %esp, %ebp
     pushl %edx
-    movl 12(%esp), %ebx             # 返回值4字节，通用寄存器2*4=8字节
 
     # 获取当前光标位置高8位
     movw $0x03d4, %dx
@@ -26,15 +29,14 @@ get_cursor:
     outb %al, %dx
     movw $0x03d5, %dx
     inb %dx, %al
-    movl %eax, 4(%esp)
 
     popl %edx
-    popl %eax
+    # leave                           # movl %ebp, %esp; popl %ebp
     ret
 
 
 ##################################################
-# 设置光标位置
+# 设置光标位置，光标范围25*80=0~1999
 #   bx: 光标位置
 ##################################################
 .globl set_cursor
@@ -78,21 +80,8 @@ put_char:
     movl $SELECTOR_VIDEO, %eax       # 注意这里重新设gs，RPL=0，可以在内核态打印
     movw %ax, %gs
 
-    # 获取当前光标位置高8位
-    movw $0x03d4, %dx
-    movb $0x0e, %al
-    outb %al, %dx
-    movw $0x03d5, %dx
-    inb %dx, %al
-    movb %al, %ah
-
-    # 获取当前光标位置低8位
-    movw $0x03d4, %dx
-    movb $0x0f, %al
-    outb %al, %dx
-    movw $0x03d5, %dx
-    inb %dx, %al
-    movw %ax, %bx                   # 光标位置存入基址寄存器bx，光标范围25*80=0~1999
+    call get_cursor
+    movw %ax, %bx                   # 光标位置存入基址寄存器bx
 
     # 栈中获取待打印的字符。返回地址占4字节，pusha的通用寄存器占8*4=32字节
     # 所以第一个参数在esp+36处
@@ -246,8 +235,3 @@ put_each_num:
     jl put_each_num
     popal
     ret
-
-
-.section .data
-put_int_buffer:
-    .int 0, 0
