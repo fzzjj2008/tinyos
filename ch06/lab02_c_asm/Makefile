@@ -2,7 +2,7 @@ BINDIR  := bin
 
 all:
 	mkdir -p $(BINDIR)
-	gcc -o $(BINDIR)/main main.c func.S -m32
+	gcc -o $(BINDIR)/main main.c func.S -m32 -g
 objdump:
 	objdump -d $(BINDIR)/main
 debug:
