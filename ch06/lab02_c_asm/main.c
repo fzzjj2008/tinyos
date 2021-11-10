@@ -1,16 +1,15 @@
 #include <stdio.h>
-#include "asm.h"
 
-void c_print(int ret)
+int c_sub(int a, int b)
 {
-    printf("The result is: %d\n", ret);
+    return a - b;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    int ret;
-    // ret = c_sub(5, 3);
-    ret = asm_sub(5, 3);
-    printf("5 - 3 = %d\n", ret);
+    int ret = 0;
+    asm_hello();
+    ret = asm_sub(1, 10);
+    printf("The return value is %d.\n", ret);
     return 0;
 }
