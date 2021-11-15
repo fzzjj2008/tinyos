@@ -11,8 +11,8 @@ put_int_buffer:
 .section .text
 .globl get_cursor
 get_cursor:
-    # pushl %ebp
-    # movl %esp, %ebp
+    pushl %ebp
+    movl %esp, %ebp
     pushl %edx
 
     # 获取当前光标位置高8位
@@ -31,7 +31,7 @@ get_cursor:
     inb %dx, %al
 
     popl %edx
-    # leave                           # movl %ebp, %esp; popl %ebp
+    leave                           # movl %ebp, %esp; popl %ebp
     ret
 
 

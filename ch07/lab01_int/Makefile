@@ -25,11 +25,11 @@ DEP     += $(patsubst %.S, $(OBJDIR)/%.d, $(SRC_S))
 
 .PHONY: all
 
-all: mkdir build img
+all: makedir build hd
 
 build: $(BINDIR)/mbr.bin $(BINDIR)/loader.bin $(BINDIR)/kernel.bin
 
-mkdir:
+makedir:
 	mkdir -p $(BINDIR)
 	mkdir -p $(OBJDIR)/$(BOOTDIR)
 	mkdir -p $(OBJDIR)/$(KERNDIR)
@@ -41,9 +41,6 @@ $(OBJDIR)/%.o: %.c
 # $(OBJDIR)/%.d: %.c
 # 	$(CC) -MM $(CFLAGS) $< -MT "$*.o $@" >$@
 
--include $(DEP)
-$(BINDIR)/kernel.bin: $(OBJ)
-	$(LD) $(LDFLAGS) -Ttext $(KERNEL_ENTRY) $^ -o $@
 
 $(BINDIR)/mbr.bin: $(BOOTDIR)/mbr.S
 	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)/$(BOOTDIR)/mbr.o
@@ -55,7 +52,11 @@ $(BINDIR)/loader.bin: $(BOOTDIR)/loader.S
 	$(LD) $(LDFLAGS) -Ttext $(LOADER_ENTRY) $(OBJDIR)/$(BOOTDIR)/loader.o -o $(OBJDIR)/loader
 	$(OBJCOPY) $(OBJDIR)/loader $@
 
-img:
+-include $(DEP)
+$(BINDIR)/kernel.bin: $(OBJ)
+	$(LD) $(LDFLAGS) -Ttext $(KERNEL_ENTRY) $^ -o $@
+
+hd:
 	qemu-img create -f raw $(TINYIMG) 1M
 	dd if=$(BINDIR)/mbr.bin of=$(TINYIMG) bs=512 count=1 conv=notrunc
 	dd if=$(BINDIR)/loader.bin of=$(TINYIMG) bs=512 count=4 seek=2 conv=notrunc

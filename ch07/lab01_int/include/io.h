@@ -1,7 +1,7 @@
 #ifndef _LIB_IO_H
-# define _LIB_IO_H
+#define _LIB_IO_H
 
-# include "stdint.h"
+#include "stdint.h"
 
 /**
  *  向指定的端口写入一个字节的数据.

@@ -4,6 +4,6 @@ file bin/kernel.bin
 target remote :1234
 layout split
 focus cmd
-break *0x7c00
+#break *0x7c00
 break main
 continue
