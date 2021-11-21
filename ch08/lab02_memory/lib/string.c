@@ -24,7 +24,7 @@ void memcpy(void* dst, const void* src, uint32_t size) {
     const uint8_t* _src = (uint8_t*) src;
 
     while (size-- > 0) {
-        *_dst++ = _src++;
+        *_dst++ = *_src++;
     }
 }
 
@@ -39,8 +39,9 @@ int memcmp(const void* left, const void* right, uint32_t size) {
     
     while (size-- > 0 && *_left++ == *_right);
 
-    if (size == 0); 
+    if (size == 0) {
         return 0;
+    }
 
     return (*_left > *_right ? 1 : -1);
 }
@@ -96,30 +97,12 @@ char* strchr(const char* str, const uint8_t c) {
 }
 
 /**
- * 倒序查找.
- */ 
-char* strrchr(const char* str, const uint8_t c) {
-    ASSERT(str != NULL);
-
-    const char* last_pos = NULL;
-
-    char item;
-    while ((item = *str) != 0) {
-        if (item == c) {
-            last_pos = str;
-        }
-    }
-
-    return last_pos;
-}
-
-/**
  * 字符串拼接.
  */ 
 char* strcat(char* dst, const char* src) {
     ASSERT(dst != NULL && src != NULL);
 
-    const char* head = dst;
+    char* head = dst;
 
     while (*dst++);
     --dst;

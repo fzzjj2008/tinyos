@@ -2,6 +2,7 @@
 #include "init.h"
 #include "interrupt.h"
 #include "debug.h"
+#include "memory.h"
 
 int main(void)
 {

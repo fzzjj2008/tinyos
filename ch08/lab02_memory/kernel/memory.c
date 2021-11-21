@@ -94,7 +94,7 @@ static void mem_pool_init(uint32_t all_memory) {
 
 static void printKernelPoolInfo(struct pool p) {
     put_str("Kernel pool bitmap address: ");
-    put_int(p.pool_bitmap.bits);
+    put_int((uint32_t) p.pool_bitmap.bits);
     put_str("; Kernel pool physical address: ");
     put_int(p.phy_addr_start);
     put_char('\n');
@@ -102,7 +102,7 @@ static void printKernelPoolInfo(struct pool p) {
 
 static void printUserPoolInfo(struct pool p) {
     put_str("User pool bitmap address: ");
-    put_int(p.pool_bitmap.bits);
+    put_int((uint32_t) p.pool_bitmap.bits);
     put_str("; User pool physical address: ");
     put_int(p.phy_addr_start);
     put_char('\n');
