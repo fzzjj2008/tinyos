@@ -2,8 +2,7 @@ TOPDIR  := $(shell pwd)
 OBJDIR	:= obj
 BINDIR  := bin
 BOOTDIR := boot
-SUBDIRS := kernel
-LIBDIRS := lib
+SUBDIRS := kernel lib
 TINYIMG := $(BINDIR)/os.img
 
 MBR_ENTRY    := 0x7c00
@@ -14,7 +13,7 @@ CC      := gcc
 LD      := ld
 OBJCOPY := objcopy -O binary
 CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -nostdinc -fno-stack-protector -Os
-CFLAGS  += $(patsubst %,-I%,$(SUBDIRS)) $(patsubst %,-I%,$(LIBDIRS))
+CFLAGS  += $(patsubst %,-I%,$(SUBDIRS))
 LDFLAGS := -m elf_i386 -nostdlib -N -e main
 
 # 获取所有子目录的.c和.S，转换成.o和.d
