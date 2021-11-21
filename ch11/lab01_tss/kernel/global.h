@@ -69,6 +69,11 @@ struct gdt_desc {
     uint8_t base_high_byte;
 };
 
+#define NULL ((void*) 0)
+#define bool int
+#define true 1
+#define false 0
+
 #define PAGE_SIZE 4096
 
 #endif

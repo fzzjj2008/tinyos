@@ -4,8 +4,7 @@
 #include "string.h"
 #include "debug.h"
 #include "sync.h"
-
-#define PAGE_SIZE 4096
+#include "global.h"
 
 // 位图地址
 #define MEM_BITMAP_BASE 0xc009a000

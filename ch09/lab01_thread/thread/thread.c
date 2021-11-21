@@ -4,8 +4,6 @@
 #include "global.h"
 #include "memory.h"
 
-#define PAGE_SIZE 4096
-
 static void kernel_thread(thread_func* function, void* func_args);
 
 static void kernel_thread(thread_func* function, void* func_args) {

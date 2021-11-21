@@ -7,8 +7,6 @@
 #include "debug.h"
 #include "print.h"
 
-#define PAGE_SIZE 4096
-
 struct task_struct* main_thread;
 struct list thread_ready_list;
 struct list thread_all_list;
