@@ -1,9 +1,9 @@
+TOPDIR  := $(shell pwd)
 OBJDIR	:= obj
 BINDIR  := bin
 BOOTDIR := boot
-KERNDIR := kernel
-DEVDIR  := device
-LIBDIR  := include
+SUBDIRS := kernel device
+LIBDIRS := lib
 TINYIMG := $(BINDIR)/os.img
 
 MBR_ENTRY    := 0x7c00
@@ -13,16 +13,16 @@ KERNEL_ENTRY := 0xc0001500
 CC      := gcc
 LD      := ld
 OBJCOPY := objcopy -O binary
-CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -nostdinc -fno-stack-protector -Os -I $(LIBDIR)
+CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -nostdinc -fno-stack-protector -Os
+CFLAGS  += $(patsubst %,-I%,$(SUBDIRS)) $(patsubst %,-I%,$(LIBDIRS))
 LDFLAGS := -m elf_i386 -nostdlib -N -e main
 
-SRC_C   := $(wildcard kernel/*.c device/*.c)
-SRC_S   := $(wildcard kernel/*.S)
-OBJ     := $(patsubst %.c, $(OBJDIR)/%.o, $(SRC_C))
-OBJ     += $(patsubst %.S, $(OBJDIR)/%.o, $(SRC_S))
+# 获取所有子目录的.c和.S，转换成.o和.d
+SRC_C   := $(wildcard $(patsubst %, %/*.c, $(SUBDIRS)))
+SRC_S   := $(wildcard $(patsubst %, %/*.S, $(SUBDIRS)))
 DEP     := $(patsubst %.c, $(OBJDIR)/%.d, $(SRC_C))
 DEP     += $(patsubst %.S, $(OBJDIR)/%.d, $(SRC_S))
-
+OBJ     := $(DEP:.d=.o)
 
 .PHONY: all
 
@@ -33,30 +33,30 @@ build: $(BINDIR)/mbr.bin $(BINDIR)/loader.bin $(BINDIR)/kernel.bin
 makedir:
 	mkdir -p $(BINDIR)
 	mkdir -p $(OBJDIR)/$(BOOTDIR)
-	mkdir -p $(OBJDIR)/$(KERNDIR)
-	mkdir -p $(OBJDIR)/$(DEVDIR)
+	mkdir -p $(patsubst %,$(OBJDIR)/%,$(SUBDIRS))
 
 $(OBJDIR)/%.o: %.S
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(OBJDIR)/$*.d -MP
 $(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(OBJDIR)/$*.d -MP
-# $(OBJDIR)/%.d: %.c
-# 	$(CC) -MM $(CFLAGS) $< -MT "$*.o $@" >$@
 
 
 $(BINDIR)/mbr.bin: $(BOOTDIR)/mbr.S
 	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)/$(BOOTDIR)/mbr.o
 	$(LD) $(LDFLAGS) -Ttext $(MBR_ENTRY) $(OBJDIR)/$(BOOTDIR)/mbr.o -o $(OBJDIR)/mbr
 	$(OBJCOPY) $(OBJDIR)/mbr $@
+	@echo "\033[32;1mCreate $@ success!\033[0m"
 
 $(BINDIR)/loader.bin: $(BOOTDIR)/loader.S
 	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)/$(BOOTDIR)/loader.o
 	$(LD) $(LDFLAGS) -Ttext $(LOADER_ENTRY) $(OBJDIR)/$(BOOTDIR)/loader.o -o $(OBJDIR)/loader
 	$(OBJCOPY) $(OBJDIR)/loader $@
+	@echo "\033[32;1mCreate $@ success!\033[0m"
 
 -include $(DEP)
 $(BINDIR)/kernel.bin: $(OBJ)
 	$(LD) $(LDFLAGS) -Ttext $(KERNEL_ENTRY) $^ -o $@
+	@echo "\033[32;1mCreate $@ success!\033[0m"
 
 hd:
 	qemu-img create -f raw $(TINYIMG) 1M
@@ -69,8 +69,7 @@ hd:
 .PHONY: objdump hexdump qemu debug gdb clean
 objdump:
 	# objdump -d $(OBJDIR)/$(BOOTDIR)/mbr.o
-	# objdump -d $(OBJDIR)/$(BOOTDIR)/loader.o
-	objdump -d $(OBJDIR)/$(KERNDIR)/main.o
+	objdump -d $(OBJDIR)/$(BOOTDIR)/loader.o
 hexdump:
 	hexdump -C $(BINDIR)/mbr.bin
 qemu:
