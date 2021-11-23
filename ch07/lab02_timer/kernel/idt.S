@@ -9,9 +9,9 @@ intr_str:
 .section .text
 intr_entry_\nr:
     pushl $0
-    push intr_str
-    call put_str
-    add $4, %esp
+    #push $intr_str
+    #call put_str
+    #add $4, %esp
 
     push %ds
     push %es
@@ -24,7 +24,7 @@ intr_entry_\nr:
     outb %al, $0x20
 
     pushl $\nr
-    call (idt_table+\nr*4)
+    call *(idt_table+\nr*4)
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -33,9 +33,9 @@ intr_entry_\nr:
 .macro INTR_ERRCODE nr
 .section .text
 intr_entry_\nr:
-    push intr_str
-    call put_str
-    add $4, %esp
+    #push $intr_str
+    #call put_str
+    #add $4, %esp
 
     push %ds
     push %es
@@ -48,7 +48,7 @@ intr_entry_\nr:
     outb %al, $0x20
 
     pushl $\nr
-    call (idt_table+\nr*4)
+    call *(idt_table+\nr*4)
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -96,6 +96,6 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x1b
     INTR_NO_ERRCODE 0x1c
     INTR_NO_ERRCODE 0x1d
-    INTR_ERRCODE    0x1e
+    INTR_NO_ERRCODE 0x1e
     INTR_NO_ERRCODE 0x1f
     INTR_NO_ERRCODE 0x20
