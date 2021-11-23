@@ -9,9 +9,9 @@ intr_str:
 .section .text
 intr_entry_\nr:
     pushl $0
-    push intr_str
-    call put_str
-    add $4, %esp
+    #push $intr_str
+    #call put_str
+    #add $4, %esp
 
     push %ds
     push %es
@@ -24,7 +24,7 @@ intr_entry_\nr:
     outb %al, $0x20
 
     pushl $\nr
-    call (idt_table+\nr*4)
+    call *(idt_table+\nr*4)
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -33,9 +33,9 @@ intr_entry_\nr:
 .macro INTR_ERRCODE nr
 .section .text
 intr_entry_\nr:
-    push intr_str
-    call put_str
-    add $4, %esp
+    #push $intr_str
+    #call put_str
+    #add $4, %esp
 
     push %ds
     push %es
@@ -48,13 +48,12 @@ intr_entry_\nr:
     outb %al, $0x20
 
     pushl $\nr
-    call (idt_table+\nr*4)
+    call *(idt_table+\nr*4)
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
 .endm
 
-.globl intr_exit
 intr_exit:
     addl $4, %esp
     popal
@@ -97,21 +96,6 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x1b
     INTR_NO_ERRCODE 0x1c
     INTR_NO_ERRCODE 0x1d
-    INTR_ERRCODE    0x1e
+    INTR_NO_ERRCODE 0x1e
     INTR_NO_ERRCODE 0x1f
-    INTR_NO_ERRCODE 0x20        # 时钟中断
-    INTR_NO_ERRCODE 0x21        # 键盘中断
-    INTR_NO_ERRCODE 0x22        # 级联使用
-    INTR_NO_ERRCODE 0x23        # 串口2
-    INTR_NO_ERRCODE 0x24        # 串口1
-    INTR_NO_ERRCODE 0x25        # 并口2
-    INTR_NO_ERRCODE 0x26        # 软盘
-    INTR_NO_ERRCODE 0x27        # 并口1
-    INTR_NO_ERRCODE 0x28        # 实时时钟
-    INTR_NO_ERRCODE 0x29        # 重定向
-    INTR_NO_ERRCODE 0x2a        # 保留
-    INTR_NO_ERRCODE 0x2b        # 保留
-    INTR_NO_ERRCODE 0x2c        # ps/2鼠标
-    INTR_NO_ERRCODE 0x2d        # fpu浮点单元异常
-    INTR_NO_ERRCODE 0x2e        # 硬盘
-    INTR_NO_ERRCODE 0x2f        # 保留
+    INTR_NO_ERRCODE 0x20
