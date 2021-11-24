@@ -4,21 +4,28 @@
 #include "stdint.h"
 
 /**
- *  向指定的端口写入一个字节的数据.
- */ 
+ * 向端口写入一个字节
+ * port: 0~255, %w1对应dx, N是立即数
+ * data: 字节，%b0对应al
+ */
 static inline void outb(uint16_t port, uint8_t data) {
     asm volatile ("outb %b0, %w1" : : "a" (data), "Nd" (port));   
 }
 
 /**
- * 将addr起始处的word_cnt个字节写入端口port.
+ * addr起始的word_cnt个字节写入端口port
+ * port: 0~255, 对应edx
+ * addr: 地址, ds:esi寄存器
+ * word_cnd: 字节数，对应ecx
  */ 
 static inline void outsw(uint16_t port, const void* addr, uint32_t word_cnt) {
     asm volatile ("cld; rep outsw" : "+S" (addr), "+c" (word_cnt) : "d" (port));
 }
 
 /**
- * 将从端口port读入的一个字节返回.
+ * 从端口port读一个字节返回
+ * port: 0~255, %w1对应dx, N是立即数
+ * data: 字节，%b0对应al
  */ 
 static inline uint8_t inb(uint16_t port) {
     uint8_t data;
@@ -27,7 +34,10 @@ static inline uint8_t inb(uint16_t port) {
 }
 
 /**
- * 将从port读取的word_cnt字节写入addr.
+ * port读取的word_cnt字节写入addr
+ * port: 0~255, 对应edx
+ * addr: 地址, es:edi寄存器
+ * word_cnd: 字节数，对应ecx
  */ 
 static inline void insw(uint16_t port, void* addr, uint32_t word_cnt) {
     asm volatile ("cld; rep insw" : "+D" (addr), "+c" (word_cnt) : "d" (port) : "memory");
