@@ -30,7 +30,8 @@ static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler 
  */
 static void general_intr_handler(uint8_t vec_nr) {
     if (vec_nr == 0x27 || vec_nr == 0x2f) {
-        // 伪中断，无需处理
+        // IRQ7和IRQ15会产生伪中断，无需处理
+        // 0x2f是从片8259A最后一个IRQ引脚，保留项
         return;
     }
 
