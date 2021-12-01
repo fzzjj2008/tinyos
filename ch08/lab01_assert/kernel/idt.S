@@ -8,7 +8,7 @@ intr_str:
 .macro INTR_NO_ERRCODE nr
 .section .text
 intr_entry_\nr:
-    pushl $0                    # ÎŞERRORCODEÖĞ¶Ï£¬push $0£¬±£Ö¤×îºóexitÁ÷³ÌÒ»ÖÂ
+    pushl $0                    # æ— ERRORCODEä¸­æ–­ï¼Œpush $0ï¼Œä¿è¯æœ€åexitæµç¨‹ä¸€è‡´
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -19,12 +19,12 @@ intr_entry_\nr:
     push %gs
     pushal
 
-    movb $0x20, %al             # ÖĞ¶Ï½áÊøÃüÁîEOI
-    outb %al, $0xa0             # Ïò´ÓÆ¬·¢ËÍ
-    outb %al, $0x20             # ÏòÖ÷Æ¬·¢ËÍ
+    movb $0x20, %al             # ä¸­æ–­ç»“æŸå‘½ä»¤EOI
+    outb %al, $0xa0             # å‘ä»ç‰‡å‘é€
+    outb %al, $0x20             # å‘ä¸»ç‰‡å‘é€
 
     pushl $\nr
-    call *(idt_table+\nr*4)     # µ÷ÓÃidt_table[nr]µÄº¯ÊıÖ¸Õë
+    call *(idt_table+\nr*4)     # è°ƒç”¨idt_table[nr]çš„å‡½æ•°æŒ‡é’ˆ
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -32,7 +32,7 @@ intr_entry_\nr:
 
 .macro INTR_ERRCODE nr
 .section .text
-intr_entry_\nr:                 # ÓĞERRORCODEÖĞ¶Ï£¬Ä¬ÈÏÕ»»áÑ¹ÈëERRORCODE
+intr_entry_\nr:                 # æœ‰ERRORCODEä¸­æ–­ï¼Œé»˜è®¤æ ˆä¼šå‹å…¥ERRORCODE
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -43,12 +43,12 @@ intr_entry_\nr:                 # ÓĞERRORCODEÖĞ¶Ï£¬Ä¬ÈÏÕ»»áÑ¹ÈëERRORCODE
     push %gs
     pushal
 
-    movb $0x20, %al             # ÖĞ¶Ï½áÊøÃüÁîEOI
-    outb %al, $0xa0             # Ïò´ÓÆ¬·¢ËÍ
-    outb %al, $0x20             # ÏòÖ÷Æ¬·¢ËÍ
+    movb $0x20, %al             # ä¸­æ–­ç»“æŸå‘½ä»¤EOI
+    outb %al, $0xa0             # å‘ä»ç‰‡å‘é€
+    outb %al, $0x20             # å‘ä¸»ç‰‡å‘é€
 
     pushl $\nr
-    call *(idt_table+\nr*4)     # µ÷ÓÃidt_table[nr]µÄº¯ÊıÖ¸Õë
+    call *(idt_table+\nr*4)     # è°ƒç”¨idt_table[nr]çš„å‡½æ•°æŒ‡é’ˆ
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -96,6 +96,6 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x1b
     INTR_NO_ERRCODE 0x1c
     INTR_NO_ERRCODE 0x1d
-    INTR_NO_ERRCODE 0x1e        # ÊéÖĞÕâÀïÉèÎªERRORCODE£¬Êµ²âÊÇNO_ERRORCODE
+    INTR_NO_ERRCODE 0x1e        # ä¹¦ä¸­è¿™é‡Œè®¾ä¸ºERRORCODEï¼Œå®æµ‹æ˜¯NO_ERRORCODE
     INTR_NO_ERRCODE 0x1f
     INTR_NO_ERRCODE 0x20
