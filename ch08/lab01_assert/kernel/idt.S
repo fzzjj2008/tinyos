@@ -8,7 +8,7 @@ intr_str:
 .macro INTR_NO_ERRCODE nr
 .section .text
 intr_entry_\nr:
-    pushl $0
+    pushl $0                    # 无ERRORCODE中断，push $0，保证最后exit流程一致
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -19,12 +19,12 @@ intr_entry_\nr:
     push %gs
     pushal
 
-    movb $0x20, %al
-    outb %al, $0xa0
-    outb %al, $0x20
+    movb $0x20, %al             # 中断结束命令EOI
+    outb %al, $0xa0             # 向从片发送
+    outb %al, $0x20             # 向主片发送
 
     pushl $\nr
-    call *(idt_table+\nr*4)
+    call *(idt_table+\nr*4)     # 调用idt_table[nr]的函数指针
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -32,7 +32,7 @@ intr_entry_\nr:
 
 .macro INTR_ERRCODE nr
 .section .text
-intr_entry_\nr:
+intr_entry_\nr:                 # 有ERRORCODE中断，默认栈会压入ERRORCODE
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -43,12 +43,12 @@ intr_entry_\nr:
     push %gs
     pushal
 
-    movb $0x20, %al
-    outb %al, $0xa0
-    outb %al, $0x20
+    movb $0x20, %al             # 中断结束命令EOI
+    outb %al, $0xa0             # 向从片发送
+    outb %al, $0x20             # 向主片发送
 
     pushl $\nr
-    call *(idt_table+\nr*4)
+    call *(idt_table+\nr*4)     # 调用idt_table[nr]的函数指针
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -96,6 +96,6 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x1b
     INTR_NO_ERRCODE 0x1c
     INTR_NO_ERRCODE 0x1d
-    INTR_NO_ERRCODE 0x1e
+    INTR_NO_ERRCODE 0x1e        # 书中这里设为ERRORCODE，实测是NO_ERRORCODE
     INTR_NO_ERRCODE 0x1f
     INTR_NO_ERRCODE 0x20
