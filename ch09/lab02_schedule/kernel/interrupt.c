@@ -48,7 +48,7 @@ enum intr_status intr_enable() {
 }
 
 /**
- * 关中断并返回之前的状态.
+ * 关中断并返回之前的状态
  */
 enum intr_status intr_disable() {
     enum intr_status old_status;
@@ -67,8 +67,8 @@ enum intr_status intr_set_status(enum intr_status status) {
 }
 
 /**
- * 获取中断状态.
- */ 
+ * 获取中断状态
+ */
 enum intr_status intr_get_status() {
     uint32_t eflags = 0;
     GET_EFLAGS(eflags);
@@ -76,11 +76,12 @@ enum intr_status intr_get_status() {
 }
 
 /**
- * 通用的中断处理函数.
- */ 
+ * 通用的中断处理函数
+ */
 static void general_intr_handler(uint8_t vec_nr) {
     if (vec_nr == 0x27 || vec_nr == 0x2f) {
-        // 伪中断，无需处理
+        // IRQ7和IRQ15会产生伪中断，无需处理
+        // 0x2f是从片8259A最后一个IRQ引脚，保留项
         return;
     }
 

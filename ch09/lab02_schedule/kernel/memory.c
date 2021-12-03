@@ -10,7 +10,7 @@
 
 // 内核使用的起始虚拟地址
 // 跳过低端1MB内存，中间10为代表页表项偏移，即0x100，即256 * 4KB = 1MB
-#define K_HEAD_START 0xc0100000
+#define K_HEAP_START 0xc0100000
 
 // 获取高10位页目录项标记
 #define PDE_INDEX(addr) ((addr & 0xffc00000) >> 22)
@@ -33,12 +33,12 @@ struct pool {
 };
 
 struct pool kernel_pool, user_pool;
-struct virtual_addr kernel_addr;
+struct virtual_addr kernel_vaddr;
 
 /**
  * 初始化内存池.
  */ 
-static void mem_pool_init(uint32_t all_memory) {
+static void mem_pool_init(uint32_t all_mem) {
     put_str("Start init Memory pool...\n");
 
     // 页表(一级和二级)占用的内存大小，256的由来:
@@ -49,7 +49,7 @@ static void mem_pool_init(uint32_t all_memory) {
     // 已经使用的内存为: 低端1MB内存 + 现有的页表和页目录占据的空间
     uint32_t used_mem = (page_table_size + 0x100000);
 
-    uint32_t free_mem = (all_memory - used_mem);
+    uint32_t free_mem = (all_mem - used_mem);
     uint16_t free_pages = free_mem / PAGE_SIZE;
 
     uint16_t kernel_free_pages = (free_pages >> 1);
@@ -82,12 +82,12 @@ static void mem_pool_init(uint32_t all_memory) {
     bitmap_init(&kernel_pool.pool_bitmap);
     bitmap_init(&user_pool.pool_bitmap);
 
-    kernel_addr.vaddr_bitmap.btmp_bytes_len = kernel_bitmap_length;
+    kernel_vaddr.vaddr_bitmap.btmp_bytes_len = kernel_bitmap_length;
     // 内核虚拟地址池仍然保存在低端内存以内
-    kernel_addr.vaddr_bitmap.bits = (void*) (MEM_BITMAP_BASE + kernel_bitmap_length + user_bitmap_length);
-    kernel_addr.vaddr_start = K_HEAD_START;
+    kernel_vaddr.vaddr_bitmap.bits = (void*) (MEM_BITMAP_BASE + kernel_bitmap_length + user_bitmap_length);
+    kernel_vaddr.vaddr_start = K_HEAP_START;
 
-    bitmap_init(&kernel_addr.vaddr_bitmap);
+    bitmap_init(&kernel_vaddr.vaddr_bitmap);
     put_str("Init memory pool done.\n");
 }
 
@@ -115,7 +115,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
     uint32_t count = 0;
 
     if (pf == PF_KERNEL) {
-        bit_idx_start = bitmap_scan(&kernel_addr.vaddr_bitmap, pg_count);
+        bit_idx_start = bitmap_scan(&kernel_vaddr.vaddr_bitmap, pg_count);
         if (bit_idx_start == -1) {
             // 申请失败，虚拟内存不足
             return NULL;
@@ -123,11 +123,11 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
 
         // 修改bitmap，占用虚拟内存
         while (count < pg_count) {
-            bitmap_set(&kernel_addr.vaddr_bitmap, (bit_idx_start + count), 1);
+            bitmap_set(&kernel_vaddr.vaddr_bitmap, (bit_idx_start + count), 1);
             ++count;
         }
 
-        vaddr_start = (kernel_addr.vaddr_start + bit_idx_start * PAGE_SIZE); 
+        vaddr_start = (kernel_vaddr.vaddr_start + bit_idx_start * PAGE_SIZE); 
     } else {
         // 用户内存分配暂不支持
     }

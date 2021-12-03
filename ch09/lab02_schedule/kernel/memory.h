@@ -17,8 +17,8 @@
 #define PG_US_U 4
 
 /**
- * 内存池类型标志.
- */ 
+ * 内存池类型标志
+ */
 enum pool_flags {
     // 内核类型
     PF_KERNEL = 1,
@@ -32,11 +32,8 @@ struct virtual_addr {
 };
 
 extern struct pool kernel_pool, user_pool;
-
 void mem_init(void);
-
 void* get_kernel_pages(uint32_t page_count);
-
 void* malloc_page(enum pool_flags pf, uint32_t page_count);
 
 #endif

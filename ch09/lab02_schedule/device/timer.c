@@ -44,10 +44,11 @@ static void intr_timer_handler(void) {
 }
 
 /**
- * 初始化PIT 8253.
- */ 
+ * 初始化PIT 8253
+ */
 void timer_init() {
     put_str("timer_init start.\n");
+    // 控制字：计数器0, 读写方式先读高字节再读低字节, 工作方式2, 计数器初值COUNTER0_VALUE
     frequency_set(COUNTER0_PORT, COUNTER0_NO, READ_WRITE_LATCH, COUNTER_MODE, COUNTER0_VALUE);
     register_handler(0x20, intr_timer_handler);
     put_str("timer_init done.\n");

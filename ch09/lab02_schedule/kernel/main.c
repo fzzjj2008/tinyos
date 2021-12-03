@@ -7,7 +7,7 @@ void k_thread_function_a(void*);
 void k_thread_function_b(void*);
 
 int main(void) {
-    put_str("I am kernel.\n");
+    put_str("kernel_init\n");
     init_all();
 
     thread_start("k_thread_a", 31, k_thread_function_a, "threadA ");
