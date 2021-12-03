@@ -6,7 +6,7 @@ void idt_init();
 
 /**
  * 中断状态.
- */ 
+ */
 enum intr_status {
     INTR_OFF,
     INTR_ON

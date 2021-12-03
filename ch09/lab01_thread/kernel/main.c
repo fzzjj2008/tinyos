@@ -9,7 +9,7 @@ int main(void)
     put_str("kernel_init\n");
     init_all();
 
-    thread_start("k_thread_1", 31, k_thread_function, "argA ");
+    thread_start("k_thread_a", 31, k_thread_function, "argA ");
 
     while (1);
     return 0;
