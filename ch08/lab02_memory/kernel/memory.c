@@ -14,9 +14,7 @@
 // 获取高10位页目录项地址
 #define PDE_INDEX(addr) ((addr & 0xffc00000) >> 22)
 // 获取中间10位页表地址
-#define PTE_INDEX(addr) ((addr & 0x003ff000) >> 12) 
-
-extern int total_mem_bytes;
+#define PTE_INDEX(addr) ((addr & 0x003ff000) >> 12)
 
 // 内存池结构体
 struct pool {
@@ -136,7 +134,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
 }
 
 /**
- * 根据vaddr，找到页表项物理地址
+ * 构造能够访问vaddr所在pte的虚拟地址
  */
 static uint32_t* pte_ptr(uint32_t vaddr) {
     // 1. 访问高10位，即PDE1023，根据loader.S的页目录表即访问自身
@@ -146,7 +144,7 @@ static uint32_t* pte_ptr(uint32_t vaddr) {
 }
 
 /**
- * 根据vaddr，找到页目录项物理地址
+ * 构造能够访问vaddr所在pde的虚拟地址
  */
 static uint32_t* pde_ptr(uint32_t vaddr) {
     // 访问PDE1023+PTE1023, 根据loader.S的页目录表即访问自身
@@ -236,8 +234,8 @@ void* get_kernel_pages(uint32_t page_count) {
 
 void mem_init(void) {
     put_str("mem_init start\n");
-    // 从loader.S读取total_mem_bytes。Makefile实现是32MB
-    uint32_t total_memory = (*(uint32_t*) (total_mem_bytes));
+    // 从loader.S读取total_mem_bytes，位置是0x900+0x100。Makefile实现是32MB
+    uint32_t total_memory = (*(uint32_t*) (0xa00));
     mem_pool_init(total_memory);
     put_str("mem_init done\n");
 }

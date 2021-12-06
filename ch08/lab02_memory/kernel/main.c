@@ -59,7 +59,7 @@ void test_bitmap()
     put_int(bitmap_get(&btmp, 5));          // 0
     put_char('\n');
     bitmap_set(&btmp, 5, 1);
-    put_int(bitmap_get(&btmp, 5));          // 1
+    put_int(bitmap_get(&btmp, 5));          // 0x20，非0表示字节有置位
     put_char('\n');
     put_int(addr);                          // addr = 0x20 (00000000_00000000_00000000_00100000)
     put_char('\n');
@@ -76,7 +76,7 @@ void test_bitmap()
     put_int(idx);                           // idx = -1
     put_char('\n');
 }
-
+ 
 int main(void)
 {
     put_str("kernel_init\n");

@@ -26,6 +26,8 @@ gdt:
 gdt_ptr:
     .word 4*8-1                     # GDT界限, 支持4个GDT
     .long gdt                       # GDT内存起始地址
+
+.org 0x100
 total_mem_bytes:
     .int 0
 ards_buf:

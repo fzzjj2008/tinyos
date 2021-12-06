@@ -33,16 +33,7 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     pthread->priority = prio;
     // 线程自己在内核态下使用的栈顶地址
     pthread->self_kstack = (uint32_t*) ((uint32_t) pthread + PAGE_SIZE);
-    pthread->stack_magic = 0x19870916;          // 自定义的魔数
-}
-
-static void make_main_thread() {
-    main_thread = running_thread();
-    init_thread(main_thread, "main", 31);
-
-    // main线程正在运行，故无需加到ready队列
-    ASSERT(!list_find(&thread_all_list, &main_thread->all_list_tag));
-    list_append(&thread_all_list, &main_thread->all_list_tag);
+    pthread->stack_magic = 0x77777777;          // 自定义的魔数
 }
 
 /**

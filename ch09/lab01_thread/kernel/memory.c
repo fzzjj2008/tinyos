@@ -5,54 +5,49 @@
 #include "debug.h"
 #include "global.h"
 
-// 位图地址
+// 位图地址范围：0xc009a000 ~ 0xc009dfff
+// tinyos总共最多支持512MB内存，对应位图大小512MB / 4KB=131072 bit=16KB
 #define MEM_BITMAP_BASE 0xc009a000
-
-// 内核使用的起始虚拟地址
-// 跳过低端1MB内存，中间10为代表页表项偏移，即0x100，即256 * 4KB = 1MB
+// 内核堆空间虚拟地址：0xc0100000
+// 跨过1M内存，使虚拟地址在逻辑上连续
 #define K_HEAP_START 0xc0100000
-
-// 获取高10位页目录项标记
+// 获取高10位页目录项地址
 #define PDE_INDEX(addr) ((addr & 0xffc00000) >> 22)
-// 获取中间10位页表标记 
-#define PTE_INDEX(addr) ((addr & 0x003ff000) >> 12) 
+// 获取中间10位页表地址
+#define PTE_INDEX(addr) ((addr & 0x003ff000) >> 12)
 
-// static functions declarations
-static void printKernelPoolInfo(struct pool p);
-static void printUserPoolInfo(struct pool p);
-static void* vaddr_get(enum pool_flags pf, uint32_t pg_count);
-static uint32_t* pte_ptr(uint32_t vaddr);
-static uint32_t* pde_ptr(uint32_t vaddr);
-static void* palloc(struct pool* m_pool);
-static void page_table_add(void* _vaddr, void* _page_phyaddr);
-
+// 内存池结构体
 struct pool {
-    struct bitmap pool_bitmap;
-    uint32_t phy_addr_start;
-    uint32_t pool_size;
+    struct bitmap pool_bitmap;          // 内存池位图
+    uint32_t phy_addr_start;            // 内存池物理起始地址
+    uint32_t pool_size;                 // 内存池字节容量
 };
 
-struct pool kernel_pool, user_pool;
-struct virtual_addr kernel_vaddr;
+struct pool kernel_pool, user_pool;     // 内核内存池和用户内存池
+struct virtual_addr kernel_vaddr;       // 虚拟地址池，用来给内核分配虚拟地址
 
 /**
- * 初始化内存池.
- */ 
+ * 初始化内存池
+ */
 static void mem_pool_init(uint32_t all_mem) {
-    put_str("Start init Memory pool...\n");
+    put_str("mem_pool_init start\n");
 
-    // 页表(一级和二级)占用的内存大小，256的由来:
-    // 一页的页目录，页目录的第0和第768项指向一个页表，此页表分配了低端1MB内存(其实此页表中也只是使用了256个表项)，
-    // 剩余的254个页目录项实际没有分配对应的真实页表，但是需要为内核预留分配的空间
+    // 一级和二级页表大小：页目录表+页表大小，总共(1+1+254)*4KB=1MB
+    //   页目录表：1张页目录表，大小4KB
+    //     PDE0, PDE768：指向页表1，即物理地址透传
+    //     PDE1023：指向页目录表自身
+    //     PDE769~1022：对应254张内核的页表
+    //   页表：每张页表大小4KB
     uint32_t page_table_size = PAGE_SIZE * 256;
 
-    // 已经使用的内存为: 低端1MB内存 + 现有的页表和页目录占据的空间
+    // 已经使用的内存为: 低端1MB内存 + 现有的页表和页目录占据的空间1MB
     uint32_t used_mem = (page_table_size + 0x100000);
 
     uint32_t free_mem = (all_mem - used_mem);
     uint16_t free_pages = free_mem / PAGE_SIZE;
 
-    uint16_t kernel_free_pages = (free_pages >> 1);
+    // 可用的物理内存分成两半，一半是内核空间，一半是用户空间
+    uint16_t kernel_free_pages = free_pages / 2;
     uint16_t user_free_pages = (free_pages - kernel_free_pages);
 
     // 内核空间bitmap长度(字节)，每一位代表一页
@@ -76,40 +71,44 @@ static void mem_pool_init(uint32_t all_mem) {
     kernel_pool.pool_bitmap.bits = (void*) MEM_BITMAP_BASE;
     user_pool.pool_bitmap.bits = (void*) (MEM_BITMAP_BASE + kernel_bitmap_length);
 
-    printKernelPoolInfo(kernel_pool);
-    printUserPoolInfo(user_pool);
-
     bitmap_init(&kernel_pool.pool_bitmap);
     bitmap_init(&user_pool.pool_bitmap);
 
+    // 内核虚拟地址池，紧挨在内核内存池和用户内存池后
     kernel_vaddr.vaddr_bitmap.btmp_bytes_len = kernel_bitmap_length;
-    // 内核虚拟地址池仍然保存在低端内存以内
     kernel_vaddr.vaddr_bitmap.bits = (void*) (MEM_BITMAP_BASE + kernel_bitmap_length + user_bitmap_length);
     kernel_vaddr.vaddr_start = K_HEAP_START;
-
     bitmap_init(&kernel_vaddr.vaddr_bitmap);
-    put_str("Init memory pool done.\n");
-}
 
-static void printKernelPoolInfo(struct pool p) {
-    put_str("Kernel pool bitmap address: ");
-    put_int((uint32_t) p.pool_bitmap.bits);
-    put_str("; Kernel pool physical address: ");
-    put_int(p.phy_addr_start);
+    // 打印信息
+    put_str("kernel pool bitmap address: ");
+    put_int((uint32_t) kernel_pool.pool_bitmap.bits);
     put_char('\n');
-}
+    put_str("kernel pool physical address: ");
+    put_int(kernel_pool.phy_addr_start);
+    put_char('\n');
+    
+    put_str("user pool bitmap address: ");
+    put_int((uint32_t) user_pool.pool_bitmap.bits);
+    put_char('\n');
+    put_str("user pool physical address: ");
+    put_int(user_pool.phy_addr_start);
+    put_char('\n');
+    
+    put_str("kernel vaddr bitmap address: ");
+    put_int((uint32_t) kernel_vaddr.vaddr_bitmap.bits);
+    put_char('\n');
+    put_str("kernel vaddr bitmap len: ");
+    put_int(kernel_vaddr.vaddr_bitmap.btmp_bytes_len);
+    put_char('\n');
 
-static void printUserPoolInfo(struct pool p) {
-    put_str("User pool bitmap address: ");
-    put_int((uint32_t) p.pool_bitmap.bits);
-    put_str("; User pool physical address: ");
-    put_int(p.phy_addr_start);
-    put_char('\n');
+    put_str("mem_pool_init done\n");
 }
 
 /**
- * 申请指定个数的虚拟页.返回虚拟页的起始地址，失败返回NULL.
- */ 
+ * 申请pg_count个的虚拟页
+ * Return: 虚拟页的起始地址，失败返回NULL
+ */
 static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
     int vaddr_start = 0, bit_idx_start = -1;
     uint32_t count = 0;
@@ -120,14 +119,13 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
             // 申请失败，虚拟内存不足
             return NULL;
         }
-
         // 修改bitmap，占用虚拟内存
         while (count < pg_count) {
             bitmap_set(&kernel_vaddr.vaddr_bitmap, (bit_idx_start + count), 1);
             ++count;
         }
-
         vaddr_start = (kernel_vaddr.vaddr_start + bit_idx_start * PAGE_SIZE); 
+
     } else {
         // 用户内存分配暂不支持
     }
@@ -236,8 +234,8 @@ void* get_kernel_pages(uint32_t page_count) {
 
 void mem_init(void) {
     put_str("mem_init start\n");
-    // 从loader.S读取total_mem_bytes。Makefile实现是32MB
-    uint32_t total_memory = (*(uint32_t*) (total_mem_bytes));
+    // 从loader.S读取total_mem_bytes，位置是0x900+0x100。Makefile实现是32MB
+    uint32_t total_memory = (*(uint32_t*) (0xa00));
     mem_pool_init(total_memory);
     put_str("mem_init done\n");
 }
