@@ -10,8 +10,8 @@ int main(void) {
     put_str("kernel_init\n");
     init_all();
 
-    thread_start("k_thread_a", 31, k_thread_function_a, "threadA ");
-    thread_start("k_thread_b", 8, k_thread_function_b, "threadB ");
+    thread_start("k_thread_a", 31, k_thread_function_a, "thdA ");
+    thread_start("k_thread_b", 8, k_thread_function_b, "thdB ");
 
     intr_enable();
 

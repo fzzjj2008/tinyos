@@ -1,17 +1,19 @@
-# include "io.h"
-# include "print.h"
-# include "interrupt.h"
-# include "thread.h"
-# include "debug.h"
+#include "timer.h"
+#include "io.h"
+#include "print.h"
+#include "thread.h"
+#include "debug.h"
+#include "interrupt.h"
 
-# define IRQ0_FREQUENCY 1000
-# define INPUT_FREQUENCY 1193180
-# define COUNTER0_VALUE INPUT_FREQUENCY / IRQ0_FREQUENCY
-# define COUNTER0_PORT 0x40
-# define COUNTER_MODE 2
-# define COUNTER0_NO 0
-# define READ_WRITE_LATCH 3
-# define PIT_CONTROL_PORT 0x43
+// 计数器0设为100Hz
+#define IRQ0_FREQUENCY 100
+#define INPUT_FREQUENCY 1193180
+#define COUNTER0_VALUE INPUT_FREQUENCY / IRQ0_FREQUENCY
+#define COUNTER0_PORT 0x40
+#define COUNTER0_NO 0
+#define COUNTER_MODE 2
+#define READ_WRITE_LATCH 3
+#define PIT_CONTROL_PORT 0x43
 
 /**
  * 内核自开启中断后所有的嘀嗒数.

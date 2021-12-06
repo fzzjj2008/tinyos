@@ -41,10 +41,10 @@ int bitmap_scan(struct bitmap* btmap, uint32_t cnt) {
     }
     int bit_idx_start = (idx_byte * 8 + idx_bit);
 
-    // 如果只判断长度为1的字符串，直接返回（P.S.可以去掉）
-    // if (cnt == 1) {
-    //     return bit_idx_start;
-    // }
+    // 如果只判断长度为1的字符串，直接返回
+    if (cnt == 1) {
+        return bit_idx_start;
+    }
 
     uint32_t bit_left = (btmap->btmp_bytes_len * 8 - bit_idx_start);
     uint32_t count = 1;

@@ -66,7 +66,7 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     pthread->pgdir = NULL;                      // 线程没有自己的地址空间，置空
     // PCB所在物理页的顶端地址
     pthread->self_kstack = (uint32_t*) ((uint32_t) pthread + PAGE_SIZE);
-    pthread->stack_magic = 0x19870916;          // 自定义的魔数
+    pthread->stack_magic = 0x77777777;          // 自定义的魔数
 }
 
 /**
@@ -124,12 +124,12 @@ static void make_main_thread() {
 }
 
 /**
- * 线程模块初始化.
- */ 
+ * 线程模块初始化
+ */
 void thread_init() {
-    put_str("Start to init thread...\n");
+    put_str("thread_init start...\n");
     list_init(&thread_all_list);
     list_init(&thread_ready_list);
     make_main_thread();
-    put_str("Thread init done.\n");
+    put_str("thread_init done\n");
 }
