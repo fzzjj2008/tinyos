@@ -35,7 +35,7 @@ enum intr_status intr_enable() {
     enum intr_status old_status;
     if (INTR_ON == intr_get_status()) {
         old_status = INTR_ON;
-	return old_status;
+        return old_status;
     }
 
     old_status = INTR_OFF;
