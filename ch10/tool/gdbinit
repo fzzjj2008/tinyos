@@ -8,6 +8,7 @@ focus cmd
 break main
 display running_thread()
 display *(running_thread())
-display schedule
+display thread_ready_list
 break intr_enable
+break schedule
 continue
