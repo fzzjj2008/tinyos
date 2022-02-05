@@ -6,9 +6,9 @@ layout split
 focus cmd
 #break *0x7c00
 break main
-display running_thread()
-display *(running_thread())
-display thread_ready_list
-break intr_enable
-break schedule
+#display running_thread()
+#display *(running_thread())
+#display thread_ready_list
+#break intr_enable
+#break schedule
 continue
