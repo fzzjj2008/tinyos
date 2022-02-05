@@ -33,31 +33,31 @@
     ((IDT_DESC_P << 7) + (IDT_DESC_DPL3 << 5) + IDT_DESC_32_TYPE)
 
 /* GDT描述符属性 */
-#define DESC_G_4K 1
-#define DESC_D_32 1
-#define DESC_L 0
-#define DESC_AVL 0
-#define DESC_P 1
-#define DESC_DPL_0 0
-#define DESC_DPL_1 1
-#define DESC_DPL_2 2
-#define DESC_DPL_3 3
-#define DESC_S_CODE 1
-#define DESC_S_DATA DESC_S_CODE
-#define DESC_S_SYS 0
-#define DESC_TYPE_CODE 8
-#define DESC_TYPE_DATA 2
-#define DESC_TYPE_TSS 9
+#define DESC_G_4K               1
+#define DESC_D_32               1
+#define DESC_L                  0
+#define DESC_AVL                0
+#define DESC_P                  1
+#define DESC_DPL_0              0
+#define DESC_DPL_1              1
+#define DESC_DPL_2              2
+#define DESC_DPL_3              3
+#define DESC_S_CODE             1
+#define DESC_S_DATA             DESC_S_CODE
+#define DESC_S_SYS              0
+#define DESC_TYPE_CODE          8
+#define DESC_TYPE_DATA          2
+#define DESC_TYPE_TSS           9
 
-#define GDT_ATTR_HIGH ((DESC_G_4K << 7) + (DESC_D_32 << 6) + (DESC_L << 5) + (DESC_AVL << 4))
-#define GDT_CODE_ATTR_LOW_DPL3 ((DESC_P << 7) + (DESC_DPL_3 << 5) + (DESC_S_CODE << 4) + (DESC_TYPE_CODE))
-#define GDT_DATA_ATTR_LOW_DPL3 ((DESC_P << 7) + (DESC_DPL_3 << 5) + (DESC_S_DATA << 4) + (DESC_TYPE_DATA))
+#define GDT_ATTR_HIGH           ((DESC_G_4K << 7) + (DESC_D_32 << 6) + (DESC_L << 5) + (DESC_AVL << 4))
+#define GDT_CODE_ATTR_LOW_DPL3  ((DESC_P << 7) + (DESC_DPL_3 << 5) + (DESC_S_CODE << 4) + (DESC_TYPE_CODE))
+#define GDT_DATA_ATTR_LOW_DPL3  ((DESC_P << 7) + (DESC_DPL_3 << 5) + (DESC_S_DATA << 4) + (DESC_TYPE_DATA))
 
 /* TSS描述符属性 */
-#define TSS_DESC_D 0
-#define TSS_ATTR_HIGH ((DESC_G_4K << 7) + (TSS_DESC_D << 6) + (DESC_L << 5) + (DESC_AVL << 4) + 0x0)
-#define TSS_ATTR_LOW ((DESC_P << 7) + (DESC_DPL_0 << 5) + (DESC_S_SYS << 4) + (DESC_TYPE_TSS))
-#define SELECTOR_TSS ((4 << 3) + (TI_GDT << 2) + RPL0)
+#define TSS_DESC_D              0
+#define TSS_ATTR_HIGH           ((DESC_G_4K << 7) + (TSS_DESC_D << 6) + (DESC_L << 5) + (DESC_AVL << 4) + 0x0)
+#define TSS_ATTR_LOW            ((DESC_P << 7) + (DESC_DPL_0 << 5) + (DESC_S_SYS << 4) + (DESC_TYPE_TSS))
+#define SELECTOR_TSS            ((4 << 3) + (TI_GDT << 2) + RPL0)
 
 /* GDT描述符结构 */
 struct gdt_desc {
@@ -71,8 +71,8 @@ struct gdt_desc {
 
 #define NULL ((void*) 0)
 #define bool int
-#define true 1
-#define false 0
+#define TRUE 1
+#define FALSE 0
 
 #define PAGE_SIZE 4096
 

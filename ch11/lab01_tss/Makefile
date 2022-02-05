@@ -14,6 +14,8 @@ LD      := ld
 OBJCOPY := objcopy -O binary
 CFLAGS  := -march=i686 -fno-builtin -Wall -ggdb -m32 -nostdinc -fno-stack-protector -Os
 CFLAGS  += $(patsubst %,-I%,$(SUBDIRS))
+# 忽略ASSERT
+# CFLAGS  += -DNDEBUG
 LDFLAGS := -m elf_i386 -nostdlib -N -e main
 
 # 获取所有子目录的.c和.S，转换成.o和.d
@@ -72,8 +74,8 @@ objdump:
 hexdump:
 	hexdump -C $(BINDIR)/mbr.bin
 qemu:
-	# qemu-system-x86_64 -hda $(TINYIMG) -m 32M -enable-kvm -monitor stdio
-	qemu-system-x86_64 -hda $(TINYIMG) -m 32M -enable-kvm -vnc :0 -monitor stdio
+	# qemu-system-x86_64 -hda $(TINYIMG) -m 32M -monitor stdio
+	qemu-system-x86_64 -hda $(TINYIMG) -m 32M -vnc :0 -monitor stdio
 debug:
 	# qemu-system-x86_64 -S -s -hda $(TINYIMG) -m 32M -monitor stdio
 	qemu-system-x86_64 -S -s -hda $(TINYIMG) -m 32M -vnc :0 -monitor stdio
