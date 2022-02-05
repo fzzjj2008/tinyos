@@ -8,7 +8,7 @@
 
 static void init_keyboard_handler(void) {
     uint8_t scancode = inb(KBD_BUF_PORT);
-    put_char(scancode);
+    put_int(scancode);
 }
 
 void keyboard_init(void) {

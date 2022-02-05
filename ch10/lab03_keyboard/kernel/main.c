@@ -3,7 +3,7 @@
 #include "interrupt.h"
 
 int main(void) {
-    put_str("I am kernel.\n");
+    put_str("kernel_init\n");
     init_all();
 
     intr_enable();
