@@ -5,7 +5,7 @@
 #include "print.h"
 #include "idt.h"
 
-#define IDT_DESC_CNT 0x30
+#define IDT_DESC_CNT 0x81
 #define PIC_M_CTRL 0x20
 #define PIC_M_DATA 0x21
 #define PIC_S_CTRL 0xa0
@@ -158,6 +158,8 @@ static void idt_desc_init(void) {
     for (i = 0; i < IDT_DESC_CNT; i++) {
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
+    // 中断处理程序为单独的syscall_handler
+    make_idt_desc(&idt[0x80], IDT_DESC_ATTR_DPL3, syscall_handler);
     put_str("idt_desc_init done\n");
 }
 

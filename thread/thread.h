@@ -6,6 +6,7 @@
 #include "memory.h"
 
 typedef void thread_func(void*);
+typedef int16_t pid_t;
 
 // 线程状态
 enum task_status {
@@ -61,6 +62,7 @@ struct thread_stack {
 // PCB，进程或线程的控制块
 struct task_struct {
     uint32_t* self_kstack;          // 内核栈
+    pid_t pid;                      // 进程PID
     enum task_status status;        // 线程状态
     uint8_t priority;               // 线程优先级
     char name[16];                  // 线程名称
