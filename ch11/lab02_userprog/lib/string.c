@@ -3,20 +3,18 @@
 #include "string.h"
 
 /**
- * 同C类库同名函数.
- */ 
+ * 注意：同C类库同名函数，在Makefile要指定-fno-builtin
+ */
 void memset(void* address, uint8_t value, uint32_t size) {
     ASSERT(address != NULL);
 
     uint8_t* addr = (uint8_t*) address;
+
     while (size-- > 0) {
         *addr++ = value;
     }
 }
 
-/**
- * 内存拷贝.
- */ 
 void memcpy(void* dst, const void* src, uint32_t size) {
     ASSERT(dst != NULL && src != NULL);
 
@@ -28,31 +26,27 @@ void memcpy(void* dst, const void* src, uint32_t size) {
     }
 }
 
-/**
- * 字符串比较,如果左边大于右边,返回1,相等返回0,否则-1.
- */ 
 int memcmp(const void* left, const void* right, uint32_t size) {
     ASSERT(left != NULL && right != NULL);
 
     const uint8_t* _left = (uint8_t*) left;
     const uint8_t* _right = (uint8_t*) right;
-    
-    while (size-- > 0 && *_left++ == *_right);
 
-    if (size == 0) {
-        return 0;
+    while (size-- > 0) {
+        if (*_left != *_right) {
+            return (*_left > *_right ? 1 : -1);
+        }
+        _left++;
+        _right++;
     }
-
-    return (*_left > *_right ? 1 : -1);
+    return 0;
 }
 
 char* strcpy(char* dst, const char* src) {
     ASSERT(dst != NULL && src != NULL);
 
     char* head = dst;
-
     while ((*dst++ = *src++));
-
     return head;
 }
 
@@ -60,16 +54,13 @@ uint32_t strlen(const char* str) {
     ASSERT(str != NULL);
 
     uint32_t count = 0;
+
     while (*str++) {
         ++count;
     }
-
     return count;
 }
 
-/**
- * 如果左边大于右边返回1.
- */ 
 int8_t strcmp(const char* left, const char* right) {
     ASSERT(left != NULL && right != NULL);
 
@@ -77,7 +68,6 @@ int8_t strcmp(const char* left, const char* right) {
         ++left;
         ++right;
     }
-
     return (*left < *right ? -1 : *left > *right);
 }
 
@@ -85,20 +75,16 @@ char* strchr(const char* str, const uint8_t c) {
     ASSERT(str != NULL);
 
     uint8_t item;
+
     while ((item = *str) != 0) {
         if (item == c) {
             return (char*) str;
         }
-
         ++str;
     }
-
     return NULL;
 }
 
-/**
- * 字符串拼接.
- */ 
 char* strcat(char* dst, const char* src) {
     ASSERT(dst != NULL && src != NULL);
 
@@ -106,27 +92,24 @@ char* strcat(char* dst, const char* src) {
 
     while (*dst++);
     --dst;
-
     while ((*dst++ = *src++));
-
     return head;
 }
 
 /**
- * 统计制定的字符在字符串中出现的次数.
- */ 
+ * 统计制定的字符在字符串中出现的次数
+ */
 uint32_t strchrs(const char* str, const uint8_t c) {
     ASSERT(str != NULL);
 
     uint32_t result = 0;
-
     char item;
+
     while ((item = *str) != 0) {
         if (item == c) {
             ++result;
         }
         ++str;
     }
-
     return result;
 }

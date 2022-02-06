@@ -24,9 +24,9 @@ void console_put_str(char* str) {
     console_release();
 }
 
-void console_put_char(uint8_t char_asci) {
+void console_put_char(uint8_t char_ascii) {
     console_acquire();
-    put_char(char_asci);
+    put_char(char_ascii);
     console_release();
 }
 

@@ -17,8 +17,8 @@
 #define PG_US_U 4
 
 /**
- * 内存池类型标志.
- */ 
+ * 内存池类型标志
+ */
 enum pool_flags {
     // 内核类型
     PF_KERNEL = 1,

@@ -8,7 +8,7 @@ intr_str:
 .macro INTR_NO_ERRCODE nr
 .section .text
 intr_entry_\nr:
-    pushl $0
+    pushl $0                    # 无ERRORCODE中断，push $0，保证最后exit流程一致
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -19,12 +19,12 @@ intr_entry_\nr:
     push %gs
     pushal
 
-    movb $0x20, %al
-    outb %al, $0xa0
-    outb %al, $0x20
+    movb $0x20, %al             # 中断结束命令EOI
+    outb %al, $0xa0             # 向从片发送
+    outb %al, $0x20             # 向主片发送
 
     pushl $\nr
-    call *(idt_table+\nr*4)
+    call *(idt_table+\nr*4)     # 调用idt_table[nr]的函数指针
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
@@ -32,7 +32,7 @@ intr_entry_\nr:
 
 .macro INTR_ERRCODE nr
 .section .text
-intr_entry_\nr:
+intr_entry_\nr:                 # 有ERRORCODE中断，默认栈会压入ERRORCODE
     #push $intr_str
     #call put_str
     #add $4, %esp
@@ -43,17 +43,18 @@ intr_entry_\nr:
     push %gs
     pushal
 
-    movb $0x20, %al
-    outb %al, $0xa0
-    outb %al, $0x20
+    movb $0x20, %al             # 中断结束命令EOI
+    outb %al, $0xa0             # 向从片发送
+    outb %al, $0x20             # 向主片发送
 
     pushl $\nr
-    call *(idt_table+\nr*4)
+    call *(idt_table+\nr*4)     # 调用idt_table[nr]的函数指针
     jmp intr_exit
 .section .data
     .long intr_entry_\nr
 .endm
 
+.globl intr_exit
 intr_exit:
     addl $4, %esp
     popal
@@ -66,7 +67,7 @@ intr_exit:
 
 .globl intr_entry_table
 intr_entry_table:
-    INTR_NO_ERRCODE 0x00
+    INTR_NO_ERRCODE 0x00        # 0~19为处理器内部固定异常, 20~31为Intel保留（表7-1）
     INTR_NO_ERRCODE 0x01
     INTR_NO_ERRCODE 0x02
     INTR_NO_ERRCODE 0x03
@@ -96,6 +97,21 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x1b
     INTR_NO_ERRCODE 0x1c
     INTR_NO_ERRCODE 0x1d
-    INTR_NO_ERRCODE 0x1e
+    INTR_NO_ERRCODE 0x1e        # 书中这里设为ERRORCODE，实测是NO_ERRORCODE
     INTR_NO_ERRCODE 0x1f
-    INTR_NO_ERRCODE 0x20
+    INTR_NO_ERRCODE 0x20        # 时钟中断对应入口
+    INTR_NO_ERRCODE 0x21        # 键盘中断对应入口
+    INTR_NO_ERRCODE 0x22        # 级联使用
+    INTR_NO_ERRCODE 0x23        # 串口2对应入口
+    INTR_NO_ERRCODE 0x24        # 串口1对应入口
+    INTR_NO_ERRCODE 0x25        # 并口2对应入口
+    INTR_NO_ERRCODE 0x26        # 软盘对应入口
+    INTR_NO_ERRCODE 0x27        # 并口1对应入口
+    INTR_NO_ERRCODE 0x28        # 实时时钟对应入口
+    INTR_NO_ERRCODE 0x29        # 重定向
+    INTR_NO_ERRCODE 0x2a        # 保留
+    INTR_NO_ERRCODE 0x2b        # 保留
+    INTR_NO_ERRCODE 0x2c        # ps/2鼠标
+    INTR_NO_ERRCODE 0x2d        # fpu浮点单元异常
+    INTR_NO_ERRCODE 0x2e        # 硬盘
+    INTR_NO_ERRCODE 0x2f        # 保留

@@ -12,7 +12,7 @@ int test_var_a = 0, test_var_b = 0;
 
 int main(void) {
     // 这里不能使用console_put_str，因为还没有初始化
-    put_str("I am kernel.\n");
+    put_str("kernel_init\n");
     init_all();
 
     thread_start("k_thread_a", default_prio, k_thread_function_a, "threadA ");
@@ -23,7 +23,6 @@ int main(void) {
     intr_enable();
 
     while (1);
-
     return 0;
 }
 

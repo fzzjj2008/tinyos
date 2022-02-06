@@ -7,11 +7,9 @@
 #include "thread.h"
 #include "string.h"
 
-extern void intr_exit(void);
-
 /**
- * 构建用户进程上下文信息.
- */ 
+ * 构建用户进程上下文信息
+ */
 void start_process(void* filename) {
     void* function = filename;
     struct task_struct* cur = running_thread();
@@ -38,36 +36,38 @@ void start_process(void* filename) {
 }
 
 /**
- * 如果给定的PCB是进程，那么将其页表设置到CR3.
- */ 
+ * 如果给定的PCB是进程，那么将其页表设置到CR3
+ */
 void page_dir_activate(struct task_struct* pthread) {
     // 内核页表的物理地址，定义在boot.inc，进入保护模式时确定
-    uint32_t page_phy_dir = 0x100000;
+    uint32_t pagedir_phy_addr = 0x100000;
 
     if (pthread->pgdir != NULL) {
         // 进程，得到其页表地址
-        page_phy_dir = addr_v2p((uint32_t) pthread->pgdir);
+        pagedir_phy_addr = addr_v2p((uint32_t) pthread->pgdir);
     }
 
-    asm volatile ("movl %0, %%cr3" : : "r" (page_phy_dir) : "memory");
+    asm volatile ("movl %0, %%cr3" : : "r" (pagedir_phy_addr) : "memory");
 }
 
 /**
- * 激活线程或进程的页表，更新tss中的esp0为进程的0特权级栈.
- */ 
+ * 激活线程或进程的页表，更新tss中的esp0为进程的0特权级栈
+ */
 void process_activate(struct task_struct* pthread) {
     ASSERT(pthread != NULL);
 
     page_dir_activate(pthread);
 
+    // 内核线程特权级是0，处理器中断不会从tss获取0特权级栈地址，不需要更新esp0
     if (pthread->pgdir != NULL) {
+        // 更新该进程的esp0，用于此进程被中断时保留上下文
         update_tss_esp(pthread);
     }
 }
 
 /**
- * 为进程创建页目录表.
- */ 
+ * 为进程创建页目录表
+ */
 uint32_t* create_page_dir(void) {
     uint32_t* page_dir_vaddr = get_kernel_pages(1);
     if (page_dir_vaddr == NULL) {
@@ -76,6 +76,7 @@ uint32_t* create_page_dir(void) {
     }
 
     // 将内核的页表复制到进程页目录项中，实现内核的共享
+    // 内核页目录的第768项
     memcpy((uint32_t*) ((uint32_t) page_dir_vaddr + 0x300 * 4), (uint32_t*) (0xfffff000 + 0x300 * 4), 1024);
 
     // 设置最后一项页表的地址为页目录地址
@@ -86,8 +87,8 @@ uint32_t* create_page_dir(void) {
 }
 
 /**
- * 为用户进程设置其单独的虚拟地址池.
- */ 
+ * 为用户进程设置其单独的虚拟地址池
+ */
 void create_user_vaddr_bitmap(struct task_struct* user_process) {
     user_process->userprog_vaddr.vaddr_start = USER_VADDR_START;
     // 0xc0000000是内核虚拟地址起始处
@@ -100,26 +101,22 @@ void create_user_vaddr_bitmap(struct task_struct* user_process) {
 }
 
 /**
- * 创建用户进程.
- */ 
+ * 创建用户进程
+ */
 void process_execute(void* filename, char* name) {
-    struct task_struct* pcb = get_kernel_pages(1);
+    // 内核内存池申请一个PCB数据结构，内核维护进程信息
+    struct task_struct* thread = get_kernel_pages(1);
     
-    init_thread(pcb, name, default_prio);
-
-    create_user_vaddr_bitmap(pcb);
-
-    thread_create(pcb, start_process, filename);
-
-    pcb->pgdir = create_page_dir();
+    init_thread(thread, name, default_prio);
+    create_user_vaddr_bitmap(thread);
+    thread_create(thread, start_process, filename);
+    thread->pgdir = create_page_dir();
 
     enum intr_status old_status = intr_disable();
+    ASSERT(!list_find(&thread_ready_list, &thread->general_tag));
+    list_append(&thread_ready_list, &thread->general_tag);
 
-    ASSERT(!list_find(&thread_ready_list, &pcb->general_tag));
-    list_append(&thread_ready_list, &pcb->general_tag);
-
-    ASSERT(!list_find(&thread_all_list, &pcb->all_list_tag));
-    list_append(&thread_all_list, &pcb->all_list_tag);
-
+    ASSERT(!list_find(&thread_all_list, &thread->all_list_tag));
+    list_append(&thread_all_list, &thread->all_list_tag);
     intr_set_status(old_status);
 }

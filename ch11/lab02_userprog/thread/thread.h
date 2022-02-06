@@ -5,26 +5,19 @@
 #include "list.h"
 #include "memory.h"
 
-/**
- * 自定义通用函数类型.
- */ 
 typedef void thread_func(void*);
 
-/**
- * 线程状态.
- */ 
+// 线程状态
 enum task_status {
     TASK_RUNNING,
     TASK_READY,
     TASK_BLOCKED,
     TASK_WAITTING,
     TASK_HANGING,
-    TASK_DIED
+    TASK_DEAD
 };
 
-/**
- * 中断栈.
- */
+// 中断栈，中断时保存上下文
 struct intr_stack {
     uint32_t vec_no;
     uint32_t edi;  
@@ -49,40 +42,35 @@ struct intr_stack {
     uint32_t ss;
 };
 
+// 线程栈，eip保存待调用的函数地址或切换后新任务的返回地址
 struct thread_stack {
     uint32_t ebp;
     uint32_t ebx;
     uint32_t edi;
     uint32_t esi;
 
-    // 第一次执行时指向待调用的函数kernel_thread，其它时候指向switch_to的返回地址.
+    // 线程第一次执行时eip指向待调用的函数kernel_thread，其它时候指向switch_to的返回地址
     void (*eip) (thread_func* func, void* func_args);
 
-    void (*unused_retaddr);
-    thread_func* function;
-    void* func_args;
+    // 以下仅供第一次被调度上CPU时使用
+    void (*unused_retaddr);         // 占4字节位置表示返回地址
+    thread_func* function;          // kernel_thread所调用的函数名
+    void* func_args;                // kernel_thread所调用的函数的参数
 };
 
-/**
- * PCB，进程或线程的控制块.
- */ 
+// PCB，进程或线程的控制块
 struct task_struct {
-    // 内核栈
-    uint32_t* self_kstack;
-    enum task_status status;
-    char name[16];
-    uint8_t priority;
-    // 当前线程可以占用的CPU嘀嗒数
-    uint8_t ticks;
-    // 此任务占用的总嘀嗒数
-    uint32_t elaspsed_ticks;
-    // 可执行队列节点
-    struct list_elem general_tag;
-    // 所有不可运行线程队列节点
-    struct list_elem all_list_tag;
-    uint32_t* pgdir;
+    uint32_t* self_kstack;          // 内核栈
+    enum task_status status;        // 线程状态
+    uint8_t priority;               // 线程优先级
+    char name[16];                  // 线程名称
+    uint8_t ticks;                  // 任务时间片
+    uint32_t elaspsed_ticks;        // 任务运行至结束的总时钟数
+    struct list_elem general_tag;   // 可执行队列节点
+    struct list_elem all_list_tag;  // 线程被加入全部线程队列使用
+    uint32_t* pgdir;                // 进程自己页表的虚拟地址
     struct virtual_addr userprog_vaddr;  // 用户进程的虚拟地址
-    uint32_t stack_magic;
+    uint32_t stack_magic;           // 魔数，栈的边界标记，检测栈的溢出，防止压栈时PCB被覆盖
 };
 
 struct task_struct* main_thread;
