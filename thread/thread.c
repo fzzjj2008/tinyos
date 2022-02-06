@@ -111,7 +111,7 @@ void schedule() {
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
 
-    // 激活任务页表，任务是进程则还要修改tss的esp0
+    // 激活任务页表，任务是用户进程则还要修改tss的esp0
     process_activate(next);
     
     switch_to(cur_thread, next);

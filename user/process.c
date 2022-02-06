@@ -62,7 +62,7 @@ void process_activate(struct task_struct* pthread) {
 
     // 内核线程特权级是0，处理器中断不会从tss获取0特权级栈地址，不需要更新esp0
     if (pthread->pgdir != NULL) {
-        // 更新该进程的esp0，用于此进程被中断时保留上下文
+        // 更新该用户进程的esp0，用于此进程被中断时保留上下文
         update_tss_esp(pthread);
     }
 }

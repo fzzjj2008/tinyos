@@ -5,6 +5,7 @@ target remote :1234
 layout split
 focus cmd
 #break *0x7c00
+display *(running_thread())
 break main
 break schedule
 continue
