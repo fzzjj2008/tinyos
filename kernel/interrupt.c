@@ -26,7 +26,7 @@ char* intr_name[IDT_DESC_CNT];
 intr_handler idt_table[IDT_DESC_CNT];
 extern intr_handler intr_entry_table[IDT_DESC_CNT];
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
-
+extern uint32_t syscall_handler(void);
 
 /**
  * 开中断并返回之前的状态

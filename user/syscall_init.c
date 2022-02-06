@@ -1,5 +1,7 @@
 #include "syscall_init.h"
-#include "stdint.h"
+#include "syscall.h"
+#include "thread.h"
+#include "print.h"
 
 #define SYSCALL_CNT 32
 typedef void* syscall;

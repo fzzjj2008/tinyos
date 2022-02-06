@@ -1,5 +1,4 @@
 #include "thread.h"
-#include "stdint.h"
 #include "string.h"
 #include "global.h"
 #include "memory.h"
@@ -7,6 +6,7 @@
 #include "debug.h"
 #include "print.h"
 #include "process.h"
+#include "sync.h"
 
 struct task_struct* main_thread;            // 主线程PCB
 struct list thread_ready_list;              // 就绪队列
@@ -39,7 +39,7 @@ struct task_struct* running_thread() {
  */
 static pid_t allocate_pid(void) {
     static pid_t next_pid =0;
-    lock_aquire(&pid_lock);
+    lock_acquire(&pid_lock);
     next_pid++;
     lock_release(&pid_lock);
     return next_pid;

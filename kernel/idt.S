@@ -1,8 +1,12 @@
 #include "idt.h"
 
+##############################################
+# 中断例程
+##############################################
 .code32
 .globl intr_entry_table
 .globl intr_exit
+
 .section .data
 intr_str:
     .asciz "interrupt occur!\n"
@@ -117,10 +121,8 @@ intr_entry_table:
     INTR_NO_ERRCODE 0x2f        # 保留
 
 ##############################################
-# 0x80系统调用中断
+# 0x80系统调用中断例程
 ##############################################
-.code 32
-.globl syscall_table
 .section .text
 .globl syscall_handler
 syscall_handler:
@@ -139,7 +141,7 @@ syscall_handler:
     push %ebx                   # 系统调用第1个参数
 
     # 调用例程
-    call *(syscall_table, %eax, 4)  # 调用[syscall_table+eax*4]的函数指针
+    call *syscall_table(, %eax, 4)  # 调用[syscall_table+eax*4]的函数指针
     addl $12, %esp
 
     # 将返回值存入当前内核栈eax位置
