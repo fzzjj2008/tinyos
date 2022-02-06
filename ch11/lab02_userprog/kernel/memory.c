@@ -136,13 +136,14 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_count) {
         // 用户内存池
         struct task_struct* cur = running_thread();
         bit_idx_start = bitmap_scan(&cur->userprog_vaddr.vaddr_bitmap, pg_count);
-
         if (bit_idx_start == -1) {
+            // 申请失败，虚拟内存不足
             return NULL;
         }
 
         while (count < pg_count) {
-            bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + count++, 1);
+            bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + count, 1);
+            ++count;
         }
 
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PAGE_SIZE;
@@ -245,10 +246,12 @@ void* malloc_page(enum pool_flags pf, uint32_t page_count) {
  * 在内核内存池中申请page_count个页
  */
 void* get_kernel_pages(uint32_t page_count) {
+    // lock_acquire(&kernel_pool.lock);
     void* vaddr = malloc_page(PF_KERNEL, page_count);
     if (vaddr != NULL) {
         memset(vaddr, 0, page_count * PAGE_SIZE);
     }
+    // lock_release(&kernel_pool.lock);
     return vaddr;
 }
 
@@ -271,8 +274,8 @@ void* get_a_page(enum pool_flags pf, uint32_t vaddr) {
     struct pool* mem_pool = (pf & PF_KERNEL) ? &kernel_pool : &user_pool;
     lock_acquire(&mem_pool->lock);
 
-    struct task_struct* cur = running_thread();
     // 虚拟地址对应的位图置1
+    struct task_struct* cur = running_thread();
     int32_t bit_idx = -1;
 
     if (cur->pgdir != NULL && pf == PF_USER) {
@@ -289,11 +292,13 @@ void* get_a_page(enum pool_flags pf, uint32_t vaddr) {
         PANIC("get_a_page: not allow kernel alloc userspace or user alloc kernelspace by get_a_page\n");
     }
 
+    // 从内核内存池或用户内存池申请一页物理内存并修改位图
     void* page_phyaddr = palloc(mem_pool);
     if (page_phyaddr == NULL) {
         return NULL;
     }
 
+    // 页表将vaddr和page_phyaddr关联起来
     page_table_add((void*) vaddr, page_phyaddr);
 
     lock_release(&mem_pool->lock);

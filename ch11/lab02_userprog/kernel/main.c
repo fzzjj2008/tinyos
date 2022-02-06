@@ -15,8 +15,8 @@ int main(void) {
     put_str("kernel_init\n");
     init_all();
 
-    thread_start("k_thread_a", default_prio, k_thread_function_a, "threadA ");
-    thread_start("k_thread_b", default_prio, k_thread_function_b, "threadB ");
+    thread_start("k_thread_a", 31, k_thread_function_a, "threadA ");
+    thread_start("k_thread_b", 31, k_thread_function_b, "threadB ");
     process_execute(user_process_a, "user_process_a");
     process_execute(user_process_b, "user_process_b");
 

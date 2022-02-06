@@ -111,7 +111,7 @@ void schedule() {
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
 
-    // 激活任务页表，任务是进程则还要修改tss的esp0
+    // 激活任务页表，任务是用户进程则还要修改tss的esp0
     process_activate(next);
     
     switch_to(cur_thread, next);
@@ -164,7 +164,7 @@ static void make_main_thread() {
  * 线程模块初始化
  */
 void thread_init() {
-    put_str("thread_init start...\n");
+    put_str("thread_init start\n");
     list_init(&thread_all_list);
     list_init(&thread_ready_list);
     make_main_thread();
