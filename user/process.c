@@ -10,8 +10,8 @@
 /**
  * 构建用户进程上下文信息
  */
-void start_process(void* filename) {
-    void* function = filename;
+void start_process(void* user_prog) {
+    void* function = user_prog;
     struct task_struct* cur = running_thread();
 
     // 指向中断栈(intr_stack的低端，即低地址处)，PCB布局回顾(从上到下表示内存地址从高到低)
@@ -32,6 +32,7 @@ void start_process(void* filename) {
     proc_stack->esp = (void*) ((uint32_t) get_a_page(PF_USER, USER_STACK3_VADDR) + PAGE_SIZE);
     proc_stack->ss = SELECTOR_U_DATA;
 
+    // 调用iret进入3特权级
     asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (proc_stack) : "memory");
 }
 
@@ -39,14 +40,15 @@ void start_process(void* filename) {
  * 如果给定的PCB是进程，那么将其页表设置到CR3
  */
 void page_dir_activate(struct task_struct* pthread) {
-    // 内核页表的物理地址，定义在boot.inc，进入保护模式时确定
+    // 内核页表的物理地址，定义在boot.h，进入保护模式时确定
     uint32_t pagedir_phy_addr = 0x100000;
 
     if (pthread->pgdir != NULL) {
-        // 进程，得到其页表地址
+        // 用户进程，得到其页表地址
         pagedir_phy_addr = addr_v2p((uint32_t) pthread->pgdir);
     }
 
+    // 更新页目录寄存器CR3，使新页表生效
     asm volatile ("movl %0, %%cr3" : : "r" (pagedir_phy_addr) : "memory");
 }
 
@@ -75,9 +77,12 @@ uint32_t* create_page_dir(void) {
         return NULL;
     }
 
-    // 将内核的页表复制到进程页目录项中，实现内核的共享
-    // 内核页目录的第768项
-    memcpy((uint32_t*) ((uint32_t) page_dir_vaddr + 0x300 * 4), (uint32_t*) (0xfffff000 + 0x300 * 4), 1024);
+    // 用户进程最高1G指向Linux的内核空间，内核共享
+    // 原理：二级页表可定义4GB空间。页目录表共1024项，0~767是用户进程页目录项；768~1023是内核的页目录项
+    // 只要想办法将将内核的页表复制到进程页目录项中，可实现内核的共享
+    // 其中768*4表示第768个页目录项的偏移量，4是页目录项大小；0xfffff000是页目录表基地址；1024表示要复制1024/4=256个页目录项
+    // 参见图11-20
+    memcpy((uint32_t*) ((uint32_t) page_dir_vaddr + 768 * 4), (uint32_t*) (0xfffff000 + 768 * 4), 1024);
 
     // 设置最后一项页表的地址为页目录地址
     uint32_t new_page_dir_phy_addr = addr_v2p((uint32_t) page_dir_vaddr);
@@ -92,8 +97,10 @@ uint32_t* create_page_dir(void) {
 void create_user_vaddr_bitmap(struct task_struct* user_process) {
     user_process->userprog_vaddr.vaddr_start = USER_VADDR_START;
     // 0xc0000000是内核虚拟地址起始处
+    // 计算位图所需要的内存页框数，DIV_ROUND_UP是除法向上取整
     uint32_t bitmap_page_count = DIV_ROUND_UP((0xc0000000 - USER_VADDR_START) / PAGE_SIZE / 8, PAGE_SIZE);
 
+    // 为用户进程位图分配内存
     user_process->userprog_vaddr.vaddr_bitmap.bits = get_kernel_pages(bitmap_page_count);
     user_process->userprog_vaddr.vaddr_bitmap.btmp_bytes_len = (0xc0000000 - USER_VADDR_START) / PAGE_SIZE / 8;
 
@@ -103,13 +110,13 @@ void create_user_vaddr_bitmap(struct task_struct* user_process) {
 /**
  * 创建用户进程
  */
-void process_execute(void* filename, char* name) {
+void process_execute(void* user_prog, char* name) {
     // 内核内存池申请一个PCB数据结构，内核维护进程信息
     struct task_struct* thread = get_kernel_pages(1);
     
-    init_thread(thread, name, default_prio);
+    init_thread(thread, name, DEFAULT_PRIO);
     create_user_vaddr_bitmap(thread);
-    thread_create(thread, start_process, filename);
+    thread_create(thread, start_process, user_prog);
     thread->pgdir = create_page_dir();
 
     enum intr_status old_status = intr_disable();

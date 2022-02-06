@@ -164,7 +164,7 @@ static void make_main_thread() {
  * 线程模块初始化
  */
 void thread_init() {
-    put_str("thread_init start...\n");
+    put_str("thread_init start\n");
     list_init(&thread_all_list);
     list_init(&thread_ready_list);
     make_main_thread();

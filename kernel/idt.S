@@ -2,6 +2,8 @@
 
 .code32
 .section .data
+.globl intr_entry_table
+.globl intr_exit
 intr_str:
     .asciz "interrupt occur!\n"
 
@@ -54,7 +56,6 @@ intr_entry_\nr:                 # 有ERRORCODE中断，默认栈会压入ERRORCO
     .long intr_entry_\nr
 .endm
 
-.globl intr_exit
 intr_exit:
     addl $4, %esp
     popal
@@ -65,7 +66,6 @@ intr_exit:
     addl $4, %esp
     iret
 
-.globl intr_entry_table
 intr_entry_table:
     INTR_NO_ERRCODE 0x00        # 0~19为处理器内部固定异常, 20~31为Intel保留（表7-1）
     INTR_NO_ERRCODE 0x01
