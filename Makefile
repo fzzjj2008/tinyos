@@ -80,7 +80,7 @@ debug:
 	# qemu-system-x86_64 -S -s -hda $(TINYIMG) -m 32M -monitor stdio
 	qemu-system-x86_64 -S -s -hda $(TINYIMG) -m 32M -vnc :0 -monitor stdio
 gdb:
-	gdb -q -x ../tool/gdbinit
+	gdb -q -x tool/gdbinit
 clean:
 	rm -rf $(BINDIR)
 	rm -rf $(OBJDIR)

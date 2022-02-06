@@ -1,5 +1,0 @@
-file bin/main
-layout split
-focus cmd
-break main
-run
