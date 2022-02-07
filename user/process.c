@@ -41,15 +41,15 @@ void start_process(void* user_prog) {
  */
 void page_dir_activate(struct task_struct* pthread) {
     // 内核页表的物理地址，定义在boot.h，进入保护模式时确定
-    uint32_t pagedir_phy_addr = 0x100000;
+    uint32_t pg_phy_addr = 0x100000;
 
     if (pthread->pgdir != NULL) {
         // 用户进程，得到其页表地址
-        pagedir_phy_addr = addr_v2p((uint32_t) pthread->pgdir);
+        pg_phy_addr = addr_v2p((uint32_t) pthread->pgdir);
     }
 
     // 更新页目录寄存器CR3，使新页表生效
-    asm volatile ("movl %0, %%cr3" : : "r" (pagedir_phy_addr) : "memory");
+    asm volatile ("movl %0, %%cr3" : : "r" (pg_phy_addr) : "memory");
 }
 
 /**

@@ -31,7 +31,7 @@ uint32_t vsprintf(char* str, const char* format, va_list ap) {
     char* buf_ptr = str;
     const char* index_ptr = format;
     char index_char = *index_ptr;
-    int arg_int;
+    int32_t arg_int;
     char* arg_str;
 
     // 解析format，将实参转换格式输出到字符串str中
