@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "sync.h"
 #include "global.h"
+#include "interrupt.h"
 
 // 位图地址范围：0xc009a000 ~ 0xc009dfff
 // tinyos总共最多支持512MB内存，对应位图大小512MB / 4KB=131072 bit=16KB
@@ -25,8 +26,16 @@ struct pool {
     struct lock lock;                   // 申请内存时互斥
 };
 
+// 内存仓库
+struct arena {
+    struct mem_block_desc* desc;        // 此arena关联的内存块描述符
+    uint32_t cnt;                       // large=true表示arena占用的页框数，否则表示arena中还有多少空闲内存(空闲mem_block数量)
+    bool large;                         // 
+};
+
 struct pool kernel_pool, user_pool;     // 内核内存池和用户内存池
 struct virtual_addr kernel_vaddr;       // 虚拟地址池，用来给内核分配虚拟地址
+struct mem_block_desc k_block_descs[MEM_BLOCK_DESC_CNT];    //内核内存块描述符数组
 
 /**
  * 初始化内存池
@@ -313,6 +322,131 @@ uint32_t addr_v2p(uint32_t vaddr) {
     return ((*pte & 0xfffff000) + (vaddr & 0x00000fff));
 }
 
+/**
+ * 返回arena中第idx个内存块的地址
+ */
+static struct mem_block* arena2block(struct arena* arena, uint32_t idx) {
+    return (struct mem_block*) ((uint32_t)arena + sizeof(struct arena) + idx * arena->desc->block_size);
+}
+
+/**
+ * 返回内存块block所在的arena地址
+ */
+static struct arena* block2arena(struct mem_block* block) {
+    return (struct arena*) ((uint32_t)block & 0xfffff000);
+}
+
+/**
+ * 在堆中申请size字节内存
+ */
+void* sys_malloc(uint32_t size) {
+    enum pool_flags pf;
+    struct pool* mem_pool;
+    uint32_t pool_size;
+    struct mem_block_desc* descs;
+    struct task_struct* cur_thread = running_thread();
+
+    if (cur_thread->pgdir == NULL) {
+        // 内核线程
+        pf = PF_KERNEL;
+        pool_size = kernel_pool.pool_size;
+        mem_pool = &kernel_pool;
+        descs = k_block_descs;
+    } else {
+        // 用户进程
+        pf = PF_USER;
+        pool_size = user_pool.pool_size;
+        mem_pool = &user_pool;
+        descs = cur_thread->u_block_desc;
+    }
+
+    // 申请的内存不在内存池容量范围内，返回NULL
+    if (size <=0 || size >= pool_size) {
+        return NULL;
+    }
+
+    struct arena* arena;
+    struct mem_block* block;
+    lock_acquire(&mem_pool->lock);
+
+    if (size > 1024) {
+        // 若申请的内存块超过1024字节，直接分配页框
+        // 1. 向上取整得到要分配的页框数
+        uint32_t page_cnt = DIV_ROUND_UP(size + sizeof(struct arena), PAGE_SIZE);
+        arena = malloc_page(pf, page_cnt);
+        if (arena == NULL) {
+            lock_release(&mem_pool->lock);
+            return NULL;
+        }
+        // 2. 分配内存块
+        memset(arena, 0, page_cnt * PAGE_SIZE);
+        arena->desc = NULL;
+        arena->cnt = page_cnt;
+        arena->large = TRUE;
+        lock_release(&mem_pool->lock);
+        return (void*) (arena + 1);
+
+    } else {
+        // 若申请的内存块小于等于1024，在mem_block_desc中分配
+        uint8_t desc_idx;
+        // 1. 先找到最合适大小的mem_block_desc
+        for (desc_idx = 0; desc_idx < MEM_BLOCK_DESC_CNT; desc_idx++) {
+            if (size <= descs[desc_idx].block_size) {
+                break;
+            }
+        }
+        // 2. 如果mem_block_desc.free_list没有可用的mem_block，则创建新的arena
+        if (list_empty(&descs[desc_idx].free_list)) {
+            // 申请1页内存创建新的arena
+            arena = malloc_page(pf, 1);
+            if (arena == NULL) {
+                lock_release(&mem_pool->lock);
+                return NULL;
+            }
+            memset(arena, 0, PAGE_SIZE);
+            arena->desc = &descs[desc_idx];
+            arena->cnt = descs[desc_idx].blocks_per_arena;
+            arena->large = FALSE;
+            // 将arena的内存块加入到mem_block_desc.free_list中
+            uint32_t block_idx;
+            enum intr_status old_status = intr_disable();
+            for (block_idx = 0; block_idx < descs[desc_idx].blocks_per_arena; block_idx++) {
+                block = arena2block(arena, block_idx);
+                ASSERT(!list_find(&arena->desc->free_list, &block->free_elem));
+                list_append(&arena->desc->free_list, &block->free_elem);
+            }
+            intr_set_status(old_status);
+        }
+        // 3. 分配内存块，从free_list取出1块可用内存作为block
+        // 这里用elem2entry宏，将mem_block.free_elem的地址转为mem_block的地址
+        block = elem2entry(struct mem_block, free_elem, list_pop(&(descs[desc_idx].free_list)));
+        memset(block, 0, descs[desc_idx].block_size);
+        arena = block2arena(block);
+        arena->cnt--;
+        lock_release(&mem_pool->lock);
+        return (void*) block;
+    }
+}
+
+/**
+ * 初始化内存块描述符mem_block_desc。为malloc做准备
+ */
+void block_desc_init(struct mem_block_desc* desc_array) {
+    uint16_t desc_idx;
+    uint16_t block_size = 16;
+
+    // 初始化内存块描述符，大小：16, 32, ... , 1024字节
+    for (desc_idx = 0; desc_idx < MEM_BLOCK_DESC_CNT; desc_idx++) {
+        desc_array[desc_idx].block_size = block_size;
+        desc_array[desc_idx].blocks_per_arena = (PAGE_SIZE - sizeof(struct arena)) / block_size;
+        list_init(&desc_array[desc_idx].free_list);
+        block_size *= 2;
+    }
+}
+
+/**
+ * 内存管理入口
+ */
 void mem_init(void) {
     put_str("mem_init start\n");
     lock_init(&kernel_pool.lock);
@@ -320,5 +454,6 @@ void mem_init(void) {
     // 从loader.S读取total_mem_bytes，位置是0x900+0x100。Makefile实现是32MB
     uint32_t total_memory = (*(uint32_t*) (0xb00));
     mem_pool_init(total_memory);
+    block_desc_init(k_block_descs);
     put_str("mem_init done\n");
 }

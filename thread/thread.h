@@ -72,6 +72,7 @@ struct task_struct {
     struct list_elem all_list_tag;  // 线程被加入全部线程队列使用
     uint32_t* pgdir;                // 进程自己页表的虚拟地址
     struct virtual_addr userprog_vaddr;  // 用户进程的虚拟地址
+    struct mem_block_desc u_block_desc[MEM_BLOCK_DESC_CNT];     // 用户进程内存块描述符
     uint32_t stack_magic;           // 魔数，栈的边界标记，检测栈的溢出，防止压栈时PCB被覆盖
 };
 
