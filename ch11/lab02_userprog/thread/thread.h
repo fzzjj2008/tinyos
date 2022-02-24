@@ -73,9 +73,8 @@ struct task_struct {
     uint32_t stack_magic;           // 魔数，栈的边界标记，检测栈的溢出，防止压栈时PCB被覆盖
 };
 
-struct task_struct* main_thread;
-struct list thread_ready_list;
-struct list thread_all_list;
+extern struct list thread_ready_list;
+extern struct list thread_all_list;
 
 struct task_struct* running_thread();
 void thread_create(struct task_struct* pthread, thread_func function, void* func_args);

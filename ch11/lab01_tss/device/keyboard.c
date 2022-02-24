@@ -109,7 +109,7 @@ static char keymap[][2] = {             // 第一套扫描码，见表10-1. 仅�
 /**
  * 键盘中断处理
  */
-static void init_keyboard_handler(void) {
+static void intr_keyboard_handler(void) {
     bool shift_pressed_last = shift_pressed;
     bool caps_lock_pressed_last = caps_lock_pressed;
     uint16_t code = inb(KEYBOARD_BUF_PORT);
@@ -212,6 +212,6 @@ static void keyboard_display_control_key() {
 void keyboard_init(void) {
     put_str("keyboard_init\n");
     ioqueue_init(&keyboard_buffer);
-    register_handler(0x21, init_keyboard_handler);
+    register_handler(0x21, intr_keyboard_handler);
     put_str("keyboard_init done\n");
 }

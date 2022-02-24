@@ -4,6 +4,12 @@ file bin/kernel.bin
 target remote :1234
 layout split
 focus cmd
-#break *0x7c00
+break *0x7c00
+break *0xc00
 break main
+break schedule
+break kernel_thread
+break general_intr_handler
+break intr_timer_handler
+#display *(running_thread())
 continue

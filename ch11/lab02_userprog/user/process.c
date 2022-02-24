@@ -82,7 +82,7 @@ uint32_t* create_page_dir(void) {
     // 只要想办法将将内核的页表复制到进程页目录项中，可实现内核的共享
     // 其中768*4表示第768个页目录项的偏移量，4是页目录项大小；0xfffff000是页目录表基地址；1024表示要复制1024/4=256个页目录项
     // 参见图11-20
-    memcpy((uint32_t*) ((uint32_t) page_dir_vaddr + 768 * 4), (uint32_t*) (0xfffff000 + 768 * 4), 1024);
+    memcpy((uint32_t*) ((uint32_t) page_dir_vaddr + 0x300*4), (uint32_t*) (0xfffff000 + 0x300*4), 1024);
 
     // 设置最后一项页表的地址为页目录地址
     uint32_t new_page_dir_phy_addr = addr_v2p((uint32_t) page_dir_vaddr);
