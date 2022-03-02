@@ -37,7 +37,7 @@ static void intr_timer_handler(void) {
 
     ASSERT(cur_thread->stack_magic == 0x77777777);
 
-    cur_thread->elaspsed_ticks++;
+    cur_thread->elapsed_ticks++;
     ticks++;
 
     if (cur_thread->ticks == 0) {

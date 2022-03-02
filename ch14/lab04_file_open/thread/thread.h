@@ -69,7 +69,7 @@ struct task_struct {
     uint8_t priority;               // 线程优先级
     char name[16];                  // 线程名称
     uint8_t ticks;                  // 任务时间片
-    uint32_t elaspsed_ticks;        // 任务运行至结束的总时钟数
+    uint32_t elapsed_ticks;         // 任务运行至结束的总时钟数
     int32_t fd_table[MAX_FILES_OPEN_PER_PROC];	// 文件描述符数组
     struct list_elem general_tag;   // 可执行队列节点
     struct list_elem all_list_tag;  // 线程被加入全部线程队列使用

@@ -86,7 +86,7 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
 
     pthread->priority = prio;
     pthread->ticks = prio;
-    pthread->elaspsed_ticks = 0;
+    pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;                      // 线程没有自己的地址空间，置空
     // PCB所在物理页的顶端地址
     pthread->self_kstack = (uint32_t*) ((uint32_t) pthread + PAGE_SIZE);

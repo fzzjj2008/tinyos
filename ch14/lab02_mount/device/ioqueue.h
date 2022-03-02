@@ -5,13 +5,13 @@
 #include "thread.h"
 #include "sync.h"
 
-#define buf_size 64
+#define bufsize 64
 
 struct ioqueue {
     struct lock lock;
     struct task_struct* producer;
     struct task_struct* consumer;
-    char buf[buf_size];
+    char buf[bufsize];
     int32_t head;
     int32_t tail;
 };

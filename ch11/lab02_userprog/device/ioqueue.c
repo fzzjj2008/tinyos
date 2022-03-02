@@ -17,7 +17,7 @@ void ioqueue_init(struct ioqueue* queue) {
  * 返回pos在缓冲区中的下一个位置值
  */
 static int32_t next_pos(int32_t pos) {
-    return (pos + 1) % buf_size;
+    return (pos + 1) % bufsize;
 }
 
 /**
