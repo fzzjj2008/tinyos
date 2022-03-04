@@ -160,7 +160,7 @@ void schedule() {
  * 阻塞当前线程
  */
 void thread_block(enum task_status status) {
-    ASSERT(status == TASK_BLOCKED || status == TASK_HANGING || status == TASK_WAITTING);
+    ASSERT(status == TASK_BLOCKED || status == TASK_HANGING || status == TASK_WAITING);
 
     enum intr_status old_status = intr_disable();
 
@@ -178,7 +178,7 @@ void thread_block(enum task_status status) {
 void thread_unblock(struct task_struct* pthread) {
     enum intr_status old_status = intr_disable();
 
-    ASSERT(pthread->status == TASK_BLOCKED || pthread->status == TASK_HANGING || pthread->status == TASK_WAITTING);
+    ASSERT(pthread->status == TASK_BLOCKED || pthread->status == TASK_HANGING || pthread->status == TASK_WAITING);
 
     // 如果pthread线程状态不是READY，将其放到就绪队列最前面，可尽快调度
     if (pthread->status != TASK_READY) {
