@@ -24,11 +24,11 @@ int main(void) {
 // 测试keyboard消费者线程
 void k_thread_a(void *args) {
     while (1) {
-        // 这里为了迁就queue_putchar的ASSERT(intr_get_status() == INTR_OFF);
+        // 这里为了迁就ioq_putchar的ASSERT(intr_get_status() == INTR_OFF);
         enum intr_status old_status = intr_disable();
-        if (!is_queue_empty(&keyboard_buffer)) {
+        if (!ioq_empty(&keyboard_buffer)) {
             console_put_str(args);
-            char byte = queue_getchar(&keyboard_buffer);
+            char byte = ioq_getchar(&keyboard_buffer);
             console_put_char(byte);
         }
         intr_set_status(old_status);
@@ -37,11 +37,11 @@ void k_thread_a(void *args) {
 
 void k_thread_b(void *args) {
     while (1) {
-        // 这里为了迁就queue_putchar的ASSERT(intr_get_status() == INTR_OFF);
+        // 这里为了迁就ioq_putchar的ASSERT(intr_get_status() == INTR_OFF);
         enum intr_status old_status = intr_disable();
-        if (!is_queue_empty(&keyboard_buffer)) {
+        if (!ioq_empty(&keyboard_buffer)) {
             console_put_str(args);
-            char byte = queue_getchar(&keyboard_buffer);
+            char byte = ioq_getchar(&keyboard_buffer);
             console_put_char(byte);
         }
         intr_set_status(old_status);

@@ -23,21 +23,21 @@ static int32_t next_pos(int32_t pos) {
 /**
  * 队列已满
  */
-int is_queue_full(struct ioqueue* queue) {
+bool ioq_full(struct ioqueue* queue) {
     return next_pos(queue->head) == queue->tail;
 }
 
 /**
  * 队列已空
  */
-int is_queue_empty(struct ioqueue* queue) {
+bool ioq_empty(struct ioqueue* queue) {
     return queue->head == queue->tail;
 }
 
 /**
  * 生产者或消费者在此缓冲区上等待
  */
-static void queue_wait(struct task_struct** waiter) {
+static void ioq_wait(struct task_struct** waiter) {
     *waiter = running_thread();
     thread_block(TASK_BLOCKED);
 }
@@ -53,13 +53,13 @@ static void wakeup(struct task_struct** waiter) {
 /**
  * 消费者从队列中获取一个字符，如果队列为空，那么等待
  */
-char queue_getchar(struct ioqueue* queue) {
+char ioq_getchar(struct ioqueue* queue) {
     ASSERT(intr_get_status() == INTR_OFF);
 
-    while (is_queue_empty(queue)) {
+    while (ioq_empty(queue)) {
         lock_acquire(&queue->lock);
         // 这里同时会把ioqueue的consumer置为当前线程
-        queue_wait(&queue->consumer);
+        ioq_wait(&queue->consumer);
         lock_release(&queue->lock);
     }
 
@@ -77,12 +77,12 @@ char queue_getchar(struct ioqueue* queue) {
 /**
  * 生产者往队列写入一个字符
  */
-void queue_putchar(struct ioqueue* queue, char byte) {
+void ioq_putchar(struct ioqueue* queue, char byte) {
     ASSERT(intr_get_status() == INTR_OFF);
 
-    while (is_queue_full(queue)) {
+    while (ioq_full(queue)) {
         lock_acquire(&queue->lock);
-        queue_wait(&queue->producer);
+        ioq_wait(&queue->producer);
         lock_release(&queue->lock);
     }
 

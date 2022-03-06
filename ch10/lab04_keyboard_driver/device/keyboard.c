@@ -174,11 +174,11 @@ static void intr_keyboard_handler(void) {
     uint8_t index = (code & 0x00ff);
     char cur_char = keymap[index][shift];
 
-    if (cur_char && !is_queue_full(&keyboard_buffer)) {
+    if (cur_char && !ioq_full(&keyboard_buffer)) {
         // 打印可见字符
         // 这里有判断键盘缓冲区满。缓冲区keyboard_buffer大小为64字节，定义在keyboard.h
         put_char(cur_char);
-        queue_putchar(&keyboard_buffer, cur_char);
+        ioq_putchar(&keyboard_buffer, cur_char);
     } else {
         // 处理ctrl、shift、alt、caps_lock
         if (code == CTRL_L_MAKE || code == CTRL_R_MAKE) {

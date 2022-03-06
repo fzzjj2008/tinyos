@@ -415,7 +415,7 @@ int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
       char* buffer = buf;
       uint32_t bytes_read = 0;
       while (bytes_read < count) {
-	 *buffer = queue_getchar(&keyboard_buffer);
+	 *buffer = ioq_getchar(&keyboard_buffer);
 	 bytes_read++;
 	 buffer++;
       }

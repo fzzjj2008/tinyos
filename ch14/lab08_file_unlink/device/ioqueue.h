@@ -16,10 +16,10 @@ struct ioqueue {
     int32_t tail;
 };
 
-int is_queue_full(struct ioqueue* queue);
+bool ioq_full(struct ioqueue* queue);
 void ioqueue_init(struct ioqueue* queue);
-int is_queue_empty(struct ioqueue* queue);
-char queue_getchar(struct ioqueue* queue);
-void queue_putchar(struct ioqueue* queue, char byte);
+bool ioq_empty(struct ioqueue* queue);
+char ioq_getchar(struct ioqueue* queue);
+void ioq_putchar(struct ioqueue* queue, char byte);
 
 #endif
